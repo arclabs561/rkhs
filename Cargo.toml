@@ -1,0 +1,24 @@
+[package]
+name = "rkhs"
+version = "0.1.0"
+edition = "2021"
+description = "Reproducing Kernel Hilbert Space: kernels, MMD, random Fourier features"
+license = "MIT OR Apache-2.0"
+keywords = ["kernel", "mmd", "rkhs", "hilbert-space", "machine-learning"]
+categories = ["algorithms", "science", "mathematics"]
+
+[dependencies]
+ndarray = "0.16"
+rand = "0.8"
+rand_distr = "0.4"
+thiserror = "2.0"
+
+# Optional SIMD acceleration
+innr = { path = "../innr", optional = true }
+
+[features]
+default = []
+simd = ["innr"]
+
+[dev-dependencies]
+proptest = "1.5"
