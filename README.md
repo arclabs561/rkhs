@@ -1,10 +1,8 @@
 # rkhs
 
-Reproducing Kernel Hilbert Space primitives: kernels, MMD, random Fourier features.
+Kernel methods: RBF, MMD, random Fourier features, Nystrom approximation.
 
-The name comes from the mathematical structure underlying all kernel methods:
-a **Reproducing Kernel Hilbert Space** is a function space where evaluation
-at any point is a continuous linear functional (the "reproducing" property).
+(rkhs: Reproducing Kernel Hilbert Space)
 
 Dual-licensed under MIT or Apache-2.0.
 
@@ -14,7 +12,7 @@ use rkhs::{rbf, mmd_unbiased, mmd_permutation_test};
 let x = vec![vec![0.0, 0.0], vec![0.1, 0.1], vec![0.2, 0.0]];
 let y = vec![vec![5.0, 5.0], vec![5.1, 5.1], vec![5.2, 5.0]];
 
-// Unbiased MMD estimate
+// MMD: kernel distance between distributions
 let mmd = mmd_unbiased(&x, &y, |a, b| rbf(a, b, 1.0));
 
 // Permutation test for significance
@@ -25,29 +23,39 @@ let (_, p_value) = mmd_permutation_test(&x, &y, |a, b| rbf(a, b, 1.0), 1000);
 
 | Function | Purpose |
 |----------|---------|
-| `rbf(x, y, sigma)` | Gaussian/RBF kernel: exp(-||x-y||^2 / 2sigma^2) |
-| `polynomial(x, y, degree, bias)` | Polynomial kernel: (x . y + bias)^degree |
-| `kernel_matrix(data, kernel)` | Compute n x n Gram matrix |
-| `mmd_biased(x, y, kernel)` | Biased MMD estimate (O(n^2)) |
-| `mmd_unbiased(x, y, kernel)` | Unbiased U-statistic (O(n^2)) |
-| `mmd_permutation_test(x, y, kernel, n)` | Hypothesis test with p-value |
-| `median_bandwidth(data)` | Median heuristic for kernel bandwidth |
-| `nystrom_approximation(data, landmarks, kernel)` | Low-rank approximation |
-| `random_fourier_features(data, n_features, sigma)` | Explicit feature map |
+| `rbf` | Gaussian/RBF kernel |
+| `polynomial` | Polynomial kernel |
+| `kernel_matrix` | n x n Gram matrix |
+| `mmd_unbiased` | Unbiased MMD U-statistic |
+| `mmd_permutation_test` | Two-sample test with p-value |
+| `median_bandwidth` | Bandwidth selection heuristic |
+| `nystrom_approximation` | Low-rank kernel approximation |
+| `random_fourier_features` | Explicit feature map for RBF |
 
 ## Why MMD
 
-MMD (Maximum Mean Discrepancy) is a kernel-based distance between probability
-distributions. Given samples from P and Q, MMD tests whether P = Q.
+MMD (Maximum Mean Discrepancy) measures distance between distributions using
+kernel mean embeddings. Given samples from P and Q, it tests whether P = Q.
 
-Uses:
-- GAN evaluation (FID-like statistics)
-- Domain adaptation (minimize MMD between source/target)
 - Two-sample testing (detect distribution shift)
-- Model criticism (compare model vs data)
+- Domain adaptation (minimize source/target divergence)
+- GAN evaluation
+- Model criticism
+
+## Why "rkhs"
+
+Every positive-definite kernel k(x,y) uniquely defines a Reproducing Kernel
+Hilbert Space (Moore-Aronszajn theorem). MMD, kernel PCA, SVM, Gaussian
+processes—all operate in this space. The name reflects the unifying structure.
+
+## Connections
+
+- [`surp`](../surp): KL/JS for discrete distributions; MMD for continuous
+- [`wass`](../wass): Wasserstein needs ground metric; MMD needs kernel
+- [`lapl`](../lapl): Kernel → similarity graph → Laplacian
 
 ## References
 
-- Gretton et al. (2012). "A Kernel Two-Sample Test" (JMLR)
+- Gretton et al. (2012). "A Kernel Two-Sample Test"
 - Muandet et al. (2017). "Kernel Mean Embedding of Distributions"
 - Rahimi & Recht (2007). "Random Features for Large-Scale Kernel Machines"
