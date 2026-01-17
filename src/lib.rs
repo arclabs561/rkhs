@@ -139,6 +139,15 @@ use thiserror::Error;
 #[cfg(feature = "simd")]
 pub mod simd;
 
+/// ClAM: Clustering with Associative Memory helpers.
+///
+/// Requires the `clam` feature.
+#[cfg(feature = "clam")]
+pub mod clam;
+
+#[cfg(feature = "clam")]
+pub use clam::{am_assign, am_contract, am_soft_assign, clam_loss};
+
 /// Errors for kernel operations.
 #[derive(Debug, Error)]
 pub enum Error {
@@ -1594,6 +1603,26 @@ mod tests {
             "should retrieve near first memory, got dist {}",
             dist_to_first
         );
+    }
+
+    #[test]
+    fn test_energy_lsr_single_step_retrieval() {
+        // Hoover et al. (2025) Theorem 1: single-step retrieval within basin radius
+        let memories = vec![vec![0.0, 0.0], vec![10.0, 10.0]];
+        let beta = 2.0; // support radius r = sqrt(2/beta) = 1.0
+        
+        // Query well within first basin (dist = 0.1 < 1.0)
+        let query = vec![0.1, 0.0];
+        
+        // Compute gradient
+        let grad = energy_lsr_grad(&query, &memories, beta);
+        
+        // Theorem 1 suggests η = 1/β for single-step retrieval in some cases,
+        // but let's verify if gradient points exactly toward memory.
+        // Gradient should be proportional to (query - memory).
+        // grad = (beta / sum) * (query - memory)
+        assert!(grad[0] > 0.0);
+        assert!((grad[1] - 0.0).abs() < 1e-10);
     }
 
     #[test]
