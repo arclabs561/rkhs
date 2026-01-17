@@ -1,10 +1,11 @@
 # rkhs
 
-Kernel methods: RBF, MMD, random Fourier features, Nystrom approximation.
-
-(rkhs: Reproducing Kernel Hilbert Space)
+Reproducing Kernel Hilbert Space primitives for non-parametric statistical testing and kernel methods.
+Implements kernel matrices, Maximum Mean Discrepancy (MMD), Random Fourier Features, and Nystrom approximation.
 
 Dual-licensed under MIT or Apache-2.0.
+
+[crates.io](https://crates.io/crates/rkhs) | [docs.rs](https://docs.rs/rkhs)
 
 ```rust
 use rkhs::{rbf, mmd_unbiased, mmd_permutation_test};
@@ -50,12 +51,6 @@ processes—all operate in this space. The name reflects the unifying structure.
 
 ## Connections
 
-- [`surp`](../surp): KL/JS for discrete distributions; MMD for continuous
+- [`logp`](../logp): KL/JS for discrete distributions; MMD for continuous
 - [`wass`](../wass): Wasserstein needs ground metric; MMD needs kernel
 - [`lapl`](../lapl): Kernel → similarity graph → Laplacian
-
-## References
-
-- Gretton et al. (2012). "A Kernel Two-Sample Test"
-- Muandet et al. (2017). "Kernel Mean Embedding of Distributions"
-- Rahimi & Recht (2007). "Random Features for Large-Scale Kernel Machines"
