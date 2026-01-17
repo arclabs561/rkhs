@@ -66,12 +66,12 @@ pub fn cosine_simd(x: &[f32], y: &[f32]) -> f32 {
 pub fn kernel_matrix_rbf_simd(data: &[Vec<f32>], sigma: f32) -> Array2<f32> {
     let n = data.len();
     let mut k = Array2::zeros((n, n));
-    
+
     let sigma_sq_2 = 2.0 * sigma * sigma;
-    
+
     for i in 0..n {
-        k[[i, i]] = 1.0;  // k(x, x) = 1 for RBF
-        
+        k[[i, i]] = 1.0; // k(x, x) = 1 for RBF
+
         for j in (i + 1)..n {
             let sq_dist = innr::l2_distance_squared(&data[i], &data[j]);
             let kij = (-sq_dist / sigma_sq_2).exp();
@@ -79,7 +79,7 @@ pub fn kernel_matrix_rbf_simd(data: &[Vec<f32>], sigma: f32) -> Array2<f32> {
             k[[j, i]] = kij;
         }
     }
-    
+
     k
 }
 
@@ -87,7 +87,7 @@ pub fn kernel_matrix_rbf_simd(data: &[Vec<f32>], sigma: f32) -> Array2<f32> {
 pub fn kernel_matrix_linear_simd(data: &[Vec<f32>]) -> Array2<f32> {
     let n = data.len();
     let mut k = Array2::zeros((n, n));
-    
+
     for i in 0..n {
         for j in i..n {
             let kij = innr::dot(&data[i], &data[j]);
@@ -95,7 +95,7 @@ pub fn kernel_matrix_linear_simd(data: &[Vec<f32>]) -> Array2<f32> {
             k[[j, i]] = kij;
         }
     }
-    
+
     k
 }
 
@@ -105,13 +105,13 @@ pub fn kernel_matrix_linear_simd(data: &[Vec<f32>]) -> Array2<f32> {
 pub fn mmd_unbiased_simd(x: &[Vec<f32>], y: &[Vec<f32>], sigma: f32) -> f32 {
     let m = x.len();
     let n = y.len();
-    
+
     if m < 2 || n < 2 {
         return 0.0;
     }
-    
+
     let sigma_sq_2 = 2.0 * sigma * sigma;
-    
+
     // Unbiased k(X, X') - exclude diagonal
     let mut kxx = 0.0f32;
     for i in 0..m {
@@ -123,7 +123,7 @@ pub fn mmd_unbiased_simd(x: &[Vec<f32>], y: &[Vec<f32>], sigma: f32) -> f32 {
         }
     }
     kxx /= (m * (m - 1)) as f32;
-    
+
     // Unbiased k(Y, Y') - exclude diagonal
     let mut kyy = 0.0f32;
     for i in 0..n {
@@ -135,17 +135,17 @@ pub fn mmd_unbiased_simd(x: &[Vec<f32>], y: &[Vec<f32>], sigma: f32) -> f32 {
         }
     }
     kyy /= (n * (n - 1)) as f32;
-    
+
     // k(X, Y)
     let mut kxy = 0.0f32;
-    for i in 0..m {
-        for j in 0..n {
-            let sq_dist = innr::l2_distance_squared(&x[i], &y[j]);
+    for xi in x.iter() {
+        for yj in y.iter() {
+            let sq_dist = innr::l2_distance_squared(xi, yj);
             kxy += (-sq_dist / sigma_sq_2).exp();
         }
     }
     kxy /= (m * n) as f32;
-    
+
     kxx + kyy - 2.0 * kxy
 }
 
@@ -180,14 +180,10 @@ mod tests {
 
     #[test]
     fn test_kernel_matrix_rbf_simd_symmetric() {
-        let data = vec![
-            vec![0.0f32, 0.0],
-            vec![1.0, 0.0],
-            vec![0.0, 1.0],
-        ];
-        
+        let data = vec![vec![0.0f32, 0.0], vec![1.0, 0.0], vec![0.0, 1.0]];
+
         let k = kernel_matrix_rbf_simd(&data, 1.0);
-        
+
         for i in 0..3 {
             for j in 0..3 {
                 assert!(
@@ -202,17 +198,25 @@ mod tests {
     fn test_mmd_simd_same_distribution() {
         let x = vec![vec![0.0f32], vec![0.1], vec![0.2]];
         let y = vec![vec![0.05f32], vec![0.15], vec![0.25]];
-        
+
         let mmd = mmd_unbiased_simd(&x, &y, 1.0);
-        assert!(mmd < 0.1, "same distribution should have small MMD: {}", mmd);
+        assert!(
+            mmd < 0.1,
+            "same distribution should have small MMD: {}",
+            mmd
+        );
     }
 
     #[test]
     fn test_mmd_simd_different_distributions() {
         let x = vec![vec![0.0f32], vec![0.1], vec![0.2]];
         let y = vec![vec![10.0f32], vec![10.1], vec![10.2]];
-        
+
         let mmd = mmd_unbiased_simd(&x, &y, 1.0);
-        assert!(mmd > 0.5, "different distributions should have large MMD: {}", mmd);
+        assert!(
+            mmd > 0.5,
+            "different distributions should have large MMD: {}",
+            mmd
+        );
     }
 }
