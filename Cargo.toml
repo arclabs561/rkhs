@@ -3,10 +3,12 @@ name = "rkhs"
 version = "0.1.0"
 authors = ["Arc <attobop@gmail.com>"]
 edition = "2021"
-description = "Reproducing Kernel Hilbert Space: kernels, MMD, random Fourier features"
+description = "Reproducing Kernel Hilbert Space: kernels, MMD, and Dense Associative Memory (LSE/LSR energy)"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/arclabs561/tekne"
-keywords = ["kernel", "mmd", "rkhs", "hilbert-space", "machine-learning"]
+repository = "https://github.com/arclabs561/rkhs"
+homepage = "https://github.com/arclabs561/rkhs"
+documentation = "https://docs.rs/rkhs"
+keywords = ["kernel", "mmd", "rkhs", "associative-memory", "machine-learning"]
 categories = ["algorithms", "science", "mathematics"]
 
 [dependencies]
