@@ -36,15 +36,22 @@ pub fn am_soft_assign(data: &[Vec<f64>], centroids: &[Vec<f64>], beta: f64) -> V
             let log_weights: Vec<f64> = centroids
                 .iter()
                 .map(|c| {
-                    let sq_dist: f64 = point.iter().zip(c.iter()).map(|(pi, ci)| (pi - ci).powi(2)).sum();
+                    let sq_dist: f64 = point
+                        .iter()
+                        .zip(c.iter())
+                        .map(|(pi, ci)| (pi - ci).powi(2))
+                        .sum();
                     neg_half_beta * sq_dist
                 })
                 .collect();
-            
-            let max_log = log_weights.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+
+            let max_log = log_weights
+                .iter()
+                .cloned()
+                .fold(f64::NEG_INFINITY, f64::max);
             let exp_weights: Vec<f64> = log_weights.iter().map(|&w| (w - max_log).exp()).collect();
             let sum_exp: f64 = exp_weights.iter().sum();
-            
+
             exp_weights.iter().map(|&w| w / sum_exp).collect()
         })
         .collect()

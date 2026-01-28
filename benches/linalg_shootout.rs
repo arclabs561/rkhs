@@ -16,15 +16,13 @@ fn bench_matmul(c: &mut Criterion) {
         let faer_b = Mat::<f64>::zeros(n, n);
 
         group.bench_function(format!("ndarray_{n}"), |b| {
-            b.iter(|| {
-                black_box(nd_a.dot(&nd_b))
-            })
+            b.iter(|| black_box(nd_a.dot(&nd_b)))
         });
 
         group.bench_function(format!("faer_{n}_serial"), |b| {
             b.iter(|| {
                 let mut c = Mat::<f64>::zeros(n, n);
-                faer::matmul::matmul(
+                faer::linalg::matmul::matmul(
                     c.as_mut(),
                     faer_a.as_ref(),
                     faer_b.as_ref(),
@@ -39,7 +37,7 @@ fn bench_matmul(c: &mut Criterion) {
         group.bench_function(format!("faer_{n}_parallel"), |b| {
             b.iter(|| {
                 let mut c = Mat::<f64>::zeros(n, n);
-                faer::matmul::matmul(
+                faer::linalg::matmul::matmul(
                     c.as_mut(),
                     faer_a.as_ref(),
                     faer_b.as_ref(),
