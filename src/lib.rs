@@ -28,7 +28,7 @@
 //! | [`rbf`] | Radial Basis Function (Gaussian) kernel |
 //! | [`epanechnikov`] | Optimal kernel for density estimation |
 //! | [`polynomial`] | Polynomial kernel |
-//! | [`kernel_matrix`] | Gram matrix K[i,j] = k(x_i, x_j) |
+//! | [`kernel_matrix`] | Gram matrix K\[i,j\] = k(x_i, x_j) |
 //! | [`kernel_sum`] | Sum Σ κ(v, ξ^μ) for AM/kernel machines |
 //! | [`energy_lse`] | Log-Sum-Exp energy (Dense AM with RBF) |
 //! | [`energy_lsr`] | Log-Sum-ReLU energy (Dense AM with Epanechnikov) |
@@ -111,7 +111,7 @@
 //! rkhs = { version = "0.1", features = ["simd"] }
 //! ```
 //!
-//! This uses [`innr`] for fast L2 distance and dot products.
+//! This uses the `innr` crate for fast L2 distance and dot products.
 //!
 //! ## What Can Go Wrong
 //!
@@ -413,7 +413,7 @@ pub fn tricube(x: &[f64], y: &[f64], sigma: f64) -> f64 {
 // Kernel Matrices
 // =============================================================================
 
-/// Compute the Gram matrix K[i,j] = k(X[i], X[j]).
+/// Compute the Gram matrix K\[i,j\] = k(X\[i\], X\[j\]).
 ///
 /// # Arguments
 ///
@@ -457,7 +457,7 @@ where
     k
 }
 
-/// Compute the Gram matrix K[i,j] = k(x_i, x_j) for an `ndarray` matrix of points.
+/// Compute the Gram matrix K\[i,j\] = k(x_i, x_j) for an `ndarray` matrix of points.
 ///
 /// This avoids the common `Array2 -> Vec<Vec<f64>>` copy when callers already have
 /// their data in `ndarray` form.
@@ -483,7 +483,7 @@ where
 
 /// RBF Gram matrix for an `ndarray` matrix of points.
 ///
-/// K[i,j] = exp(-||x_i - x_j||² / (2σ²)).
+/// K\[i,j\] = exp(-||x_i - x_j||² / (2σ²)).
 ///
 /// This implementation uses the expansion ||x-y||² = ||x||² + ||y||² - 2x·y
 /// to leverage highly optimized BLAS/SIMD dot products.
@@ -517,7 +517,7 @@ pub fn rbf_kernel_matrix_ndarray(points: ArrayView2<'_, f64>, sigma: f64) -> Arr
     k
 }
 
-/// Compute cross-kernel matrix K[i,j] = k(X[i], Y[j]).
+/// Compute cross-kernel matrix K\[i,j\] = k(X\[i\], Y\[j\]).
 ///
 /// For comparing two different sets of points.
 pub fn kernel_matrix_cross<F>(x: &[Vec<f64>], y: &[Vec<f64>], kernel: F) -> Array2<f64>
@@ -1610,13 +1610,13 @@ mod tests {
         // Hoover et al. (2025) Theorem 1: single-step retrieval within basin radius
         let memories = vec![vec![0.0, 0.0], vec![10.0, 10.0]];
         let beta = 2.0; // support radius r = sqrt(2/beta) = 1.0
-        
+
         // Query well within first basin (dist = 0.1 < 1.0)
         let query = vec![0.1, 0.0];
-        
+
         // Compute gradient
         let grad = energy_lsr_grad(&query, &memories, beta);
-        
+
         // Theorem 1 suggests η = 1/β for single-step retrieval in some cases,
         // but let's verify if gradient points exactly toward memory.
         // Gradient should be proportional to (query - memory).
