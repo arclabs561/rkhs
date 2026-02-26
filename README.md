@@ -7,6 +7,13 @@ Dual-licensed under MIT or Apache-2.0.
 
 [crates.io](https://crates.io/crates/rkhs) | [docs.rs](https://docs.rs/rkhs)
 
+## Quickstart
+
+```toml
+[dependencies]
+rkhs = "0.1.0"
+```
+
 ```rust
 use rkhs::{rbf, mmd_unbiased, mmd_permutation_test};
 
