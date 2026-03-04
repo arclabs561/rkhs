@@ -1,5 +1,9 @@
 # rkhs
 
+[![crates.io](https://img.shields.io/crates/v/rkhs.svg)](https://crates.io/crates/rkhs)
+[![Documentation](https://docs.rs/rkhs/badge.svg)](https://docs.rs/rkhs)
+[![CI](https://github.com/arclabs561/rkhs/actions/workflows/ci.yml/badge.svg)](https://github.com/arclabs561/rkhs/actions/workflows/ci.yml)
+
 Reproducing Kernel Hilbert Space primitives for non-parametric statistical testing and kernel methods.
 Implements kernel matrices, Maximum Mean Discrepancy (MMD), Random Fourier Features, and Nystrom approximation.
 
