@@ -4,8 +4,8 @@
 
 use crate::{energy_lse_grad, retrieve_memory};
 
-/// Hard assignment of points to cluster centroids using AM energy.
-pub fn am_assign(data: &[Vec<f64>], centroids: &[Vec<f64>], beta: f64) -> Vec<usize> {
+/// Hard assignment of points to cluster centroids (nearest centroid by Euclidean distance).
+pub fn am_assign(data: &[Vec<f64>], centroids: &[Vec<f64>]) -> Vec<usize> {
     data.iter()
         .map(|point| {
             let mut min_dist_sq = f64::MAX;

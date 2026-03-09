@@ -9,7 +9,8 @@
 //! (via Mercer's theorem), and every RKHS has a unique reproducing kernel.
 //!
 //! This crate provides the primitives: kernels, Gram matrices, MMD, and
-//! random Fourier features—all operations in or derived from the RKHS.
+//! Dense Associative Memory energy functions—all operations in or derived
+//! from the RKHS.
 //!
 //! ## Intuition
 //!
@@ -99,19 +100,6 @@
 //! - [`logp`](../logp): MMD and KL divergence both measure distribution "distance"
 //! - [`wass`](../wass): Wasserstein and MMD are different ways to compare distributions
 //! - [`lapl`](../lapl): Gaussian kernel → Laplacian eigenvalue problems
-//! - [`strata`](../strata): Kernel k-means uses these kernels
-//! - [`innr`](../innr): SIMD acceleration for kernel computations (via `simd` feature)
-//!
-//! ## SIMD Acceleration
-//!
-//! Enable the `simd` feature for SIMD-accelerated kernel computations:
-//!
-//! ```toml
-//! [dependencies]
-//! rkhs = { version = "0.1", features = ["simd"] }
-//! ```
-//!
-//! This uses the `innr` crate for fast L2 distance and dot products.
 //!
 //! ## What Can Go Wrong
 //!
@@ -126,42 +114,15 @@
 //!
 //! - Gretton et al. (2012). "A Kernel Two-Sample Test" (JMLR)
 //! - Muandet et al. (2017). "Kernel Mean Embedding of Distributions" (Found. & Trends)
-//! - Rahimi & Recht (2007). "Random Features for Large-Scale Kernel Machines"
+//! - Hoover et al. (2025). "Dense Associative Memory with Epanechnikov Energy"
 
-use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
-use rand::{Rng, SeedableRng};
-use rand_distr::{Distribution, Normal};
-use thiserror::Error;
-
-/// SIMD-accelerated kernel computations using innr.
-///
-/// Requires the `simd` feature.
-#[cfg(feature = "simd")]
-pub mod simd;
+use ndarray::{Array1, Array2, ArrayView2};
+use rand::Rng;
 
 /// ClAM: Clustering with Associative Memory helpers.
-///
-/// Requires the `clam` feature.
-#[cfg(feature = "clam")]
 pub mod clam;
 
-#[cfg(feature = "clam")]
 pub use clam::{am_assign, am_contract, am_soft_assign, clam_loss};
-
-/// Errors for kernel operations.
-#[derive(Debug, Error)]
-pub enum Error {
-    #[error("empty input")]
-    EmptyInput,
-
-    #[error("dimension mismatch: {0} vs {1}")]
-    DimensionMismatch(usize, usize),
-
-    #[error("invalid bandwidth: {0}")]
-    InvalidBandwidth(f64),
-}
-
-pub type Result<T> = std::result::Result<T, Error>;
 
 // =============================================================================
 // Kernel Functions
@@ -457,30 +418,6 @@ where
     k
 }
 
-/// Compute the Gram matrix K\[i,j\] = k(x_i, x_j) for an `ndarray` matrix of points.
-///
-/// This avoids the common `Array2 -> Vec<Vec<f64>>` copy when callers already have
-/// their data in `ndarray` form.
-pub fn kernel_matrix_ndarray<F>(points: ArrayView2<'_, f64>, kernel: F) -> Array2<f64>
-where
-    F: Fn(ArrayView1<'_, f64>, ArrayView1<'_, f64>) -> f64,
-{
-    let n = points.nrows();
-    let mut k = Array2::zeros((n, n));
-
-    for i in 0..n {
-        let xi = points.row(i);
-        for j in i..n {
-            let xj = points.row(j);
-            let kij = kernel(xi, xj);
-            k[[i, j]] = kij;
-            k[[j, i]] = kij;
-        }
-    }
-
-    k
-}
-
 /// RBF Gram matrix for an `ndarray` matrix of points.
 ///
 /// K\[i,j\] = exp(-||x_i - x_j||² / (2σ²)).
@@ -517,31 +454,11 @@ pub fn rbf_kernel_matrix_ndarray(points: ArrayView2<'_, f64>, sigma: f64) -> Arr
     k
 }
 
-/// Compute cross-kernel matrix K\[i,j\] = k(X\[i\], Y\[j\]).
-///
-/// For comparing two different sets of points.
-pub fn kernel_matrix_cross<F>(x: &[Vec<f64>], y: &[Vec<f64>], kernel: F) -> Array2<f64>
-where
-    F: Fn(&[f64], &[f64]) -> f64,
-{
-    let nx = x.len();
-    let ny = y.len();
-    let mut k = Array2::zeros((nx, ny));
-
-    for i in 0..nx {
-        for j in 0..ny {
-            k[[i, j]] = kernel(&x[i], &y[j]);
-        }
-    }
-
-    k
-}
-
 // =============================================================================
 // Maximum Mean Discrepancy (MMD)
 // =============================================================================
 
-/// Biased MMD estimate in O(n) time.
+/// Biased MMD estimate in O(n^2) time.
 ///
 /// Uses the empirical mean embeddings:
 /// MMD²(P, Q) ≈ ||μ_P - μ_Q||²_H
@@ -691,128 +608,6 @@ where
     kxx + kyy - 2.0 * kxy
 }
 
-/// Linear-time MMD estimate using random features.
-///
-/// Approximates MMD in O(n) time using the Nyström method or
-/// explicit random Fourier features.
-///
-/// # Arguments
-///
-/// * `x` - Samples from P
-/// * `y` - Samples from Q
-/// * `sigma` - RBF bandwidth
-/// * `num_features` - Number of random features
-///
-/// # Returns
-///
-/// Approximate MMD² estimate
-pub fn mmd_linear_rff(x: &[Vec<f64>], y: &[Vec<f64>], sigma: f64, num_features: usize) -> f64 {
-    if x.is_empty() || y.is_empty() {
-        return 0.0;
-    }
-
-    let dim = x[0].len();
-
-    // Generate random features
-    let mut rng = rand::rng();
-    mmd_linear_rff_with_rng(x, y, sigma, num_features, dim, &mut rng)
-}
-
-/// Linear-time MMD estimate using random Fourier features, with caller-provided RNG.
-///
-/// This is useful for:
-/// - **Deterministic tests/benchmarks** (seed your RNG)
-/// - **Reproducible pipelines** (thread an RNG through)
-///
-/// Note: `mmd_linear_rff()` uses a thread-local RNG and is intentionally nondeterministic.
-pub fn mmd_linear_rff_with_rng<R: rand::Rng + ?Sized>(
-    x: &[Vec<f64>],
-    y: &[Vec<f64>],
-    sigma: f64,
-    num_features: usize,
-    dim: usize,
-    rng: &mut R,
-) -> f64 {
-    if num_features == 0 {
-        return 0.0;
-    }
-
-    // `Normal::new` only fails if std dev <= 0 or not finite.
-    // Treat this as a caller bug: the RBF bandwidth must be positive and finite.
-    let normal = Normal::new(0.0, 1.0 / sigma).expect("sigma must be positive and finite");
-
-    let mut omega: Vec<Vec<f64>> = Vec::with_capacity(num_features);
-    let mut b: Vec<f64> = Vec::with_capacity(num_features);
-
-    for _ in 0..num_features {
-        let w: Vec<f64> = (0..dim).map(|_| normal.sample(rng)).collect();
-        omega.push(w);
-        b.push(rng.random::<f64>() * 2.0 * std::f64::consts::PI);
-    }
-
-    // Compute random features z(x) = sqrt(2/D) * cos(ωᵀx + b)
-    let scale = (2.0 / num_features as f64).sqrt();
-
-    let z_x = |point: &[f64]| -> Vec<f64> {
-        omega
-            .iter()
-            .zip(b.iter())
-            .map(|(w, &bias)| {
-                let dot: f64 = w.iter().zip(point.iter()).map(|(wi, xi)| wi * xi).sum();
-                scale * (dot + bias).cos()
-            })
-            .collect()
-    };
-
-    // Mean embedding of X
-    let mut mu_x = vec![0.0; num_features];
-    for xi in x {
-        let zi = z_x(xi);
-        for (j, &zij) in zi.iter().enumerate() {
-            mu_x[j] += zij;
-        }
-    }
-    for v in &mut mu_x {
-        *v /= x.len() as f64;
-    }
-
-    // Mean embedding of Y
-    let mut mu_y = vec![0.0; num_features];
-    for yi in y {
-        let zi = z_x(yi);
-        for (j, &zij) in zi.iter().enumerate() {
-            mu_y[j] += zij;
-        }
-    }
-    for v in &mut mu_y {
-        *v /= y.len() as f64;
-    }
-
-    // MMD² ≈ ||μ_X - μ_Y||²
-    mu_x.iter()
-        .zip(mu_y.iter())
-        .map(|(a, b)| (a - b).powi(2))
-        .sum()
-}
-
-/// Linear-time MMD estimate using random Fourier features, with an explicit seed.
-///
-/// This is a convenience wrapper over [`mmd_linear_rff_with_rng`] to support reproducible runs.
-pub fn mmd_linear_rff_with_seed(
-    x: &[Vec<f64>],
-    y: &[Vec<f64>],
-    sigma: f64,
-    num_features: usize,
-    seed: u64,
-) -> f64 {
-    if x.is_empty() || y.is_empty() {
-        return 0.0;
-    }
-    let dim = x[0].len();
-    let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
-    mmd_linear_rff_with_rng(x, y, sigma, num_features, dim, &mut rng)
-}
-
 // =============================================================================
 // Two-Sample Testing
 // =============================================================================
@@ -925,13 +720,6 @@ pub fn median_bandwidth(data: &[Vec<f64>]) -> f64 {
     let median = distances[distances.len() / 2];
 
     median / (2.0_f64).sqrt()
-}
-
-/// Multi-scale kernel: average over several bandwidths.
-///
-/// Useful when the optimal bandwidth is unknown.
-pub fn rbf_multiscale(x: &[f64], y: &[f64], sigmas: &[f64]) -> f64 {
-    sigmas.iter().map(|&s| rbf(x, y, s)).sum::<f64>() / sigmas.len() as f64
 }
 
 // =============================================================================
@@ -1241,7 +1029,7 @@ pub fn energy_lsr_grad(v: &[f64], memories: &[Vec<f64>], beta: f64) -> Vec<f64> 
 /// * `v` - Current state (modified in place)
 /// * `grad` - Gradient at current state
 /// * `learning_rate` - Step size η
-pub fn energy_descent_step(v: &mut [f64], grad: &[f64], learning_rate: f64) {
+fn energy_descent_step(v: &mut [f64], grad: &[f64], learning_rate: f64) {
     for (vi, gi) in v.iter_mut().zip(grad.iter()) {
         *vi -= learning_rate * gi;
     }
@@ -1316,121 +1104,6 @@ where
     }
 
     (v, max_iters)
-}
-
-// =============================================================================
-// Positive Random Features (for non-negative kernel approximation)
-// =============================================================================
-//
-// Standard trigonometric random features can produce negative kernel estimates.
-// For applications requiring non-negative kernels (like LSE energy), we need
-// positive random features (Choromanski et al., 2020).
-//
-// For RBF kernel: exp(-||x-y||²/2σ²) ≈ <Φ(x), Φ(y)> with Φ(x) guaranteed positive.
-
-/// Positive random features for RBF kernel.
-///
-/// Unlike trigonometric features, these guarantee non-negative kernel estimates.
-/// Uses the identity: exp(||x+x'||²/2) = E[exp(<ω,x>)exp(<ω,x'>)]
-///
-/// # Arguments
-///
-/// * `x` - Input point
-/// * `omega` - Pre-generated random frequencies (each ω ~ N(0, I/σ²))
-///
-/// # Returns
-///
-/// Feature vector Φ(x) such that <Φ(x), Φ(y)> ≈ k(x, y)
-pub fn positive_random_features(x: &[f64], omega: &[Vec<f64>], sq_norm_x: f64) -> Vec<f64> {
-    let num_features = omega.len();
-    let scale = (1.0 / num_features as f64).sqrt();
-
-    // Φ_j(x) = scale * exp(-||x||²/2) * exp(<ω_j, x>)
-    let norm_factor = (-sq_norm_x / 2.0).exp();
-
-    omega
-        .iter()
-        .map(|w| {
-            let dot: f64 = w.iter().zip(x.iter()).map(|(wi, xi)| wi * xi).sum();
-            scale * norm_factor * dot.exp()
-        })
-        .collect()
-}
-
-/// Generate random frequencies for positive random features.
-///
-/// # Arguments
-///
-/// * `dim` - Dimension of input space
-/// * `num_features` - Number of random features
-/// * `sigma` - RBF bandwidth
-/// * `rng` - Random number generator
-pub fn generate_positive_rff_frequencies<R: Rng>(
-    dim: usize,
-    num_features: usize,
-    sigma: f64,
-    rng: &mut R,
-) -> Vec<Vec<f64>> {
-    let normal = Normal::new(0.0, 1.0 / sigma).expect("sigma must be positive");
-
-    (0..num_features)
-        .map(|_| (0..dim).map(|_| normal.sample(rng)).collect())
-        .collect()
-}
-
-// =============================================================================
-// Nyström Approximation
-// =============================================================================
-
-/// Nyström approximation for kernel matrix.
-///
-/// Approximates an n×n kernel matrix using only m landmark points,
-/// reducing memory from O(n²) to O(nm).
-///
-/// K ≈ K_nm K_mm⁻¹ K_mn
-///
-/// # Arguments
-///
-/// * `data` - Full dataset
-/// * `landmarks` - Landmark points (subset or random sample)
-/// * `kernel` - Kernel function
-///
-/// # Returns
-///
-/// Low-rank approximation factors (L, W) where K ≈ L W Lᵀ
-/// Nyström approximation for kernel matrix.
-///
-/// Approximates an n×n kernel matrix using only m landmark points,
-/// reducing memory from O(n²) to O(nm).
-///
-/// K ≈ K_nm K_mm⁻¹ K_mn
-///
-/// # Arguments
-///
-/// * `data` - Full dataset
-/// * `landmarks` - Landmark points (subset or random sample)
-/// * `kernel` - Kernel function
-///
-/// # Returns
-///
-/// (K_nm, K_mm) matrices for reconstruction
-pub fn nystrom_approximation<F>(
-    data: &[Vec<f64>],
-    landmarks: &[Vec<f64>],
-    kernel: F,
-) -> (Array2<f64>, Array2<f64>)
-where
-    F: Fn(&[f64], &[f64]) -> f64,
-{
-    // K_nm: n × m cross-kernel matrix
-    let k_nm = kernel_matrix_cross(data, landmarks, &kernel);
-
-    // K_mm: m × m landmark kernel matrix
-    let k_mm = kernel_matrix(landmarks, &kernel);
-
-    // Return factors: K ≈ K_nm K_mm⁻¹ K_mn
-    // Caller can compute pseudo-inverse of K_mm as needed
-    (k_nm, k_mm)
 }
 
 // =============================================================================

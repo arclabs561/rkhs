@@ -6,22 +6,6 @@
 //! This makes clustering end-to-end differentiable (unlike k-means).
 //!
 //! Run: cargo run --example clam_clustering
-// This example depends on experimental "ClAM" helpers (hard/soft assignment,
-// contraction, and a differentiable clustering loss). Those helpers are not part
-// of the default `rkhs` API surface.
-//
-// To avoid breaking `cargo test` / `cargo build` for the crate, the full example
-// is behind a feature gate.
-
-#[cfg(not(feature = "clam"))]
-fn main() {
-    eprintln!(
-        "rkhs example `clam_clustering` is disabled by default.\n\
-Enable it with: `cargo run -p rkhs --example clam_clustering --features clam`"
-    );
-}
-
-#[cfg(feature = "clam")]
 fn main() {
     use rkhs::{am_assign, am_contract, am_soft_assign, clam_loss, energy_lse};
 
@@ -76,7 +60,7 @@ fn main() {
     // =========================================================================
     println!("--- Hard Assignment ---\n");
 
-    let labels = am_assign(&data, &centroids, 2.0);
+    let labels = am_assign(&data, &centroids);
 
     println!("Point assignments:");
     for (i, label) in labels.iter().enumerate() {

@@ -4,8 +4,7 @@
 [![Documentation](https://docs.rs/rkhs/badge.svg)](https://docs.rs/rkhs)
 [![CI](https://github.com/arclabs561/rkhs/actions/workflows/ci.yml/badge.svg)](https://github.com/arclabs561/rkhs/actions/workflows/ci.yml)
 
-Reproducing Kernel Hilbert Space primitives for non-parametric statistical testing and kernel methods.
-Implements kernel matrices, Maximum Mean Discrepancy (MMD), Random Fourier Features, and Nystrom approximation.
+Reproducing Kernel Hilbert Space primitives for kernel methods, MMD, and Dense Associative Memory.
 
 Dual-licensed under MIT or Apache-2.0.
 
@@ -15,7 +14,7 @@ Dual-licensed under MIT or Apache-2.0.
 
 ```toml
 [dependencies]
-rkhs = "0.1.0"
+rkhs = "0.1.1"
 ```
 
 ```rust
@@ -38,11 +37,13 @@ let (_, p_value) = mmd_permutation_test(&x, &y, |a, b| rbf(a, b, 1.0), 1000);
 | `rbf` | Gaussian/RBF kernel |
 | `polynomial` | Polynomial kernel |
 | `kernel_matrix` | n x n Gram matrix |
+| `mmd_biased` | Biased MMD estimate |
 | `mmd_unbiased` | Unbiased MMD U-statistic |
 | `mmd_permutation_test` | Two-sample test with p-value |
 | `median_bandwidth` | Bandwidth selection heuristic |
-| `nystrom_approximation` | Low-rank kernel approximation |
-| `random_fourier_features` | Explicit feature map for RBF |
+| `energy_lse` | Log-Sum-Exp energy (Dense AM with RBF) |
+| `energy_lsr` | Log-Sum-ReLU energy (Dense AM with Epanechnikov) |
+| `retrieve_memory` | Memory retrieval via energy descent |
 
 ## Why MMD
 
@@ -58,10 +59,4 @@ kernel mean embeddings. Given samples from P and Q, it tests whether P = Q.
 
 Every positive-definite kernel k(x,y) uniquely defines a Reproducing Kernel
 Hilbert Space (Moore-Aronszajn theorem). MMD, kernel PCA, SVM, Gaussian
-processes—all operate in this space. The name reflects the unifying structure.
-
-## Connections
-
-- [`logp`](../logp): KL/JS for discrete distributions; MMD for continuous
-- [`wass`](../wass): Wasserstein needs ground metric; MMD needs kernel
-- [`lapl`](../lapl): Kernel → similarity graph → Laplacian
+processes -- all operate in this space. The name reflects the unifying structure.
