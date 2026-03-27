@@ -121,8 +121,14 @@ use rand::Rng;
 
 /// ClAM: Clustering with Associative Memory helpers.
 pub mod clam;
+/// Kernels on probability distributions.
+pub mod distribution_kernel;
 
 pub use clam::{am_assign, am_contract, am_soft_assign, clam_loss};
+pub use distribution_kernel::{
+    expected_likelihood_kernel, fisher_kernel_categorical, jensen_shannon_kernel,
+    probability_product_kernel,
+};
 
 // =============================================================================
 // Kernel Functions
