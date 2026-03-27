@@ -123,12 +123,15 @@ use rand::Rng;
 pub mod clam;
 /// Kernels on probability distributions.
 pub mod distribution_kernel;
+/// Kernels on labeled graphs.
+pub mod graph_kernel;
 
 pub use clam::{am_assign, am_contract, am_soft_assign, clam_loss};
 pub use distribution_kernel::{
     expected_likelihood_kernel, fisher_kernel_categorical, jensen_shannon_kernel,
     probability_product_kernel,
 };
+pub use graph_kernel::{random_walk_kernel, wl_subtree_kernel};
 
 // =============================================================================
 // Kernel Functions
