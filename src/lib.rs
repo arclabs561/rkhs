@@ -37,6 +37,9 @@
 //! | [`mmd_biased`] | O(n²) biased MMD estimate |
 //! | [`mmd_unbiased`] | O(n²) unbiased MMD u-statistic |
 //! | [`mmd_permutation_test`] | Significance test via permutation |
+//! | [`kernel_quantile_embedding`] | Kernel embedding at a quantile level |
+//! | [`qmmd`] | Quantile MMD (tail-sensitive distribution comparison) |
+//! | [`quantile_gram_matrix`] | Gram matrix restricted to a quantile level |
 //!
 //! ## Quick Start
 //!
@@ -115,6 +118,7 @@
 //! - Gretton et al. (2012). "A Kernel Two-Sample Test" (JMLR)
 //! - Muandet et al. (2017). "Kernel Mean Embedding of Distributions" (Found. & Trends)
 //! - Hoover et al. (2025). "Dense Associative Memory with Epanechnikov Energy"
+//! - Naslidnyk et al. (2025). "Kernel Quantile Embeddings"
 
 use ndarray::{Array1, Array2, ArrayView2};
 use rand::Rng;
@@ -125,6 +129,8 @@ pub mod clam;
 pub mod distribution_kernel;
 /// Kernels on labeled graphs.
 pub mod graph_kernel;
+/// Kernel quantile embeddings for tail-sensitive distribution comparison.
+pub mod quantile_kernel;
 
 pub use clam::{am_assign, am_contract, am_soft_assign, clam_loss};
 pub use distribution_kernel::{
@@ -132,6 +138,7 @@ pub use distribution_kernel::{
     probability_product_kernel,
 };
 pub use graph_kernel::{random_walk_kernel, wl_subtree_kernel};
+pub use quantile_kernel::{kernel_quantile_embedding, qmmd, quantile_gram_matrix};
 
 // =============================================================================
 // Kernel Functions
