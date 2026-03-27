@@ -137,7 +137,10 @@ pub use distribution_kernel::{
     expected_likelihood_kernel, fisher_kernel_categorical, jensen_shannon_kernel,
     probability_product_kernel,
 };
-pub use graph_kernel::{random_walk_kernel, wl_subtree_kernel};
+pub use graph_kernel::{
+    random_walk_kernel, sliced_wasserstein_graph_kernel, structural_node_features,
+    wl_subtree_kernel,
+};
 pub use quantile_kernel::{kernel_quantile_embedding, qmmd, quantile_gram_matrix};
 
 // =============================================================================
