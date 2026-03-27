@@ -19,6 +19,7 @@ rand = "0.9"
 criterion = { version = "0.5", features = ["html_reports"] }
 clump = "0.4"
 faer = "0.19"
+kuji = "0.1"
 rmt = "0.1"
 
 [[bench]]
