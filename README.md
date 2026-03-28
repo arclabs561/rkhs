@@ -4,7 +4,7 @@
 [![Documentation](https://docs.rs/rkhs/badge.svg)](https://docs.rs/rkhs)
 [![CI](https://github.com/arclabs561/rkhs/actions/workflows/ci.yml/badge.svg)](https://github.com/arclabs561/rkhs/actions/workflows/ci.yml)
 
-Reproducing Kernel Hilbert Space primitives for kernel methods, MMD, and Dense Associative Memory.
+Kernel methods.
 
 Dual-licensed under MIT or Apache-2.0.
 
