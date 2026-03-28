@@ -39,6 +39,9 @@
 //! | [`mmd_permutation_test`] | Significance test via permutation |
 //! | [`kernel_quantile_embedding`] | Kernel embedding at a quantile level |
 //! | [`qmmd`] | Quantile MMD (tail-sensitive distribution comparison) |
+//! | [`weighted_qmmd`] | QMMD with configurable quantile-level weighting |
+//! | [`quantile_function_embedding`] | Kernel-smoothed quantile function at specified levels |
+//! | [`quantile_distribution_kernel`] | Kernel between distributions via quantile embeddings |
 //! | [`quantile_gram_matrix`] | Gram matrix restricted to a quantile level |
 //!
 //! ## Quick Start
@@ -141,7 +144,10 @@ pub use graph_kernel::{
     random_walk_kernel, sliced_wasserstein_graph_kernel, structural_node_features,
     wl_subtree_kernel,
 };
-pub use quantile_kernel::{kernel_quantile_embedding, qmmd, quantile_gram_matrix};
+pub use quantile_kernel::{
+    kernel_quantile_embedding, qmmd, quantile_distribution_kernel, quantile_function_embedding,
+    quantile_gram_matrix, weighted_qmmd, QuantileWeight,
+};
 
 // =============================================================================
 // Kernel Functions
