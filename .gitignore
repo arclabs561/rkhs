@@ -2,3 +2,8 @@
 Cargo.lock
 .DS_Store
 .claude/
+
+# AI editor configs (machine-local)
+.cursor/
+.cursorrules
+.cursorignore
