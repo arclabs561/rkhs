@@ -11,6 +11,8 @@ documentation = "https://docs.rs/rkhs"
 keywords = ["kernel", "mmd", "rkhs", "associative-memory", "machine-learning"]
 categories = ["algorithms", "science", "mathematics"]
 
+[workspace]
+
 [dependencies]
 ndarray = "0.16"
 rand = "0.9"
