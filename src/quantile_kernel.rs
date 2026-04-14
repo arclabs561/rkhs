@@ -841,22 +841,10 @@ mod tests {
         let q: Vec<f64> = (0..100).map(|i| 5.0 + i as f64 / 100.0).collect();
         let taus: Vec<f64> = (1..=10).map(|i| i as f64 / 11.0).collect();
 
-        let k_pp = quantile_distribution_kernel(
-            &p,
-            &p,
-            &taus,
-            1.0,
-            rbf_1d,
-            &QuantileWeight::Uniform,
-        );
-        let k_pq = quantile_distribution_kernel(
-            &p,
-            &q,
-            &taus,
-            1.0,
-            rbf_1d,
-            &QuantileWeight::Uniform,
-        );
+        let k_pp =
+            quantile_distribution_kernel(&p, &p, &taus, 1.0, rbf_1d, &QuantileWeight::Uniform);
+        let k_pq =
+            quantile_distribution_kernel(&p, &q, &taus, 1.0, rbf_1d, &QuantileWeight::Uniform);
 
         assert!(
             k_pq < k_pp,
