@@ -524,20 +524,10 @@ mod tests {
     #[test]
     fn qmmd_detects_different_tails() {
         // Gaussian-like (concentrated) vs heavy-tailed (spread out)
-        let gaussian: Vec<f64> = (0..200)
-            .map(|i| {
-                let t = (i as f64 - 100.0) / 30.0;
-                t
-            })
-            .collect();
+        let gaussian: Vec<f64> = (0..200).map(|i| (i as f64 - 100.0) / 30.0).collect();
 
         // Heavy-tailed: same center but much wider spread
-        let heavy: Vec<f64> = (0..200)
-            .map(|i| {
-                let t = (i as f64 - 100.0) / 10.0;
-                t
-            })
-            .collect();
+        let heavy: Vec<f64> = (0..200).map(|i| (i as f64 - 100.0) / 10.0).collect();
 
         let q = qmmd(&gaussian, &heavy, rbf_1d, 20);
         assert!(q > 0.01, "QMMD should detect tail differences, got {q}");
@@ -761,6 +751,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::needless_range_loop)]
     fn weighted_qmmd_tail_heavy_more_sensitive_to_tail_shift() {
         // P: centered at 0, range [-2, 2]
         let p: Vec<f64> = (0..200).map(|i| (i as f64 - 100.0) / 50.0).collect();

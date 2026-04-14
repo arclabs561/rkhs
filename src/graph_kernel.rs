@@ -642,6 +642,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::needless_range_loop)]
     fn sw_gram_matrix_psd() {
         // Three small graphs with structural features
         let g1 = vec![vec![1, 2], vec![0, 2], vec![0, 1]]; // triangle
@@ -709,6 +710,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::needless_range_loop)]
     fn structural_features_star() {
         // Hub node 0 connected to leaves 1, 2, 3
         let adj = vec![vec![1, 2, 3], vec![0], vec![0], vec![0]];
