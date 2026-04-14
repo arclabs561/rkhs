@@ -53,9 +53,9 @@ fn main() {
     let lambda = 1.0;
     let kernel = |a: &[f64], b: &[f64]| jensen_shannon_kernel(a, b, lambda);
 
-    let mmd_ab = mmd_biased(&corpus_a, &corpus_b, &kernel);
-    let mmd_ac = mmd_biased(&corpus_a, &corpus_c, &kernel);
-    let mmd_aa = mmd_biased(&corpus_a, &corpus_a, &kernel);
+    let mmd_ab = mmd_biased(&corpus_a, &corpus_b, kernel);
+    let mmd_ac = mmd_biased(&corpus_a, &corpus_c, kernel);
+    let mmd_aa = mmd_biased(&corpus_a, &corpus_a, kernel);
 
     println!("=== MMD Between Corpora of Topic Distributions ===");
     println!();
