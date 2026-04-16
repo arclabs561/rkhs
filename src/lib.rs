@@ -175,8 +175,6 @@ pub mod distribution_kernel;
 /// Kernels on labeled graphs.
 ///
 /// **Deprecated**: use `graphops::graph_kernel` instead.
-#[deprecated(since = "0.2.0", note = "use `graphops::graph_kernel` instead")]
-#[allow(deprecated)]
 pub mod graph_kernel;
 /// Kernel quantile embeddings for tail-sensitive distribution comparison.
 pub mod quantile_kernel;
