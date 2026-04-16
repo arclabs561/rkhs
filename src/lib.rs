@@ -44,7 +44,43 @@
 //! | [`quantile_distribution_kernel`] | Kernel between distributions via quantile embeddings |
 //! | [`quantile_gram_matrix`] | Gram matrix restricted to a quantile level |
 //!
-//! ## Quick Start
+//! ## Modern Hopfield Networks in 10 Lines
+//!
+//! Dense Associative Memory (Krotov et al., 2016-2025) uses kernel energy functions
+//! to build content-addressable memory: store patterns, query with a noisy version,
+//! and gradient descent retrieves the nearest stored pattern.
+//!
+//! ```rust
+//! use rkhs::{energy_lse_grad, retrieve_memory};
+//!
+//! // Store three patterns (colours in RGB-ish space)
+//! let memories = vec![
+//!     vec![1.0, 0.0, 0.0],  // red
+//!     vec![0.0, 1.0, 0.0],  // green
+//!     vec![0.0, 0.0, 1.0],  // blue
+//! ];
+//!
+//! // Noisy query: mostly red but corrupted
+//! let query = vec![0.9, 0.2, 0.1];
+//!
+//! // Retrieve via energy descent
+//! let (retrieved, iters) = retrieve_memory(
+//!     query,
+//!     &memories,
+//!     |v, m| energy_lse_grad(v, m, 10.0),  // beta=10 → sharp attractor
+//!     0.1,   // learning rate
+//!     200,   // max iterations
+//!     1e-7,  // convergence tolerance
+//! );
+//!
+//! // Nearest pattern is red: [1,0,0]
+//! assert!(retrieved[0] > 0.9, "should converge to red");
+//! assert!(retrieved[1] < 0.1, "green component suppressed");
+//! assert!(retrieved[2] < 0.1, "blue component suppressed");
+//! println!("Converged in {iters} iterations: {retrieved:?}");
+//! ```
+//!
+//! ## Quick Start (MMD)
 //!
 //! ```rust
 //! use rkhs::{rbf, mmd_unbiased};
