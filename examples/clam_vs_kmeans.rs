@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 //! ClAM (associative memory clustering) vs k-means.
 //!
 //! Compares rkhs ClAM-style clustering (energy-based contraction toward

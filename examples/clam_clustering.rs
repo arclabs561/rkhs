@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 //! ClAM: Clustering with Associative Memory
 //!
 //! Demonstrates AM-based clustering from Section 5.3 of the tutorial.

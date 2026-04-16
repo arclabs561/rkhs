@@ -1,4 +1,3 @@
-#![allow(deprecated)]
 //! Graph kernels: similarity measures between labeled graphs.
 //!
 //! **Deprecated**: this module has moved to the `graphops` crate.
