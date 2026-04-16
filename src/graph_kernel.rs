@@ -1,4 +1,9 @@
+#![allow(deprecated)]
 //! Graph kernels: similarity measures between labeled graphs.
+//!
+//! **Deprecated**: this module has moved to the `graphops` crate.
+//! Use `graphops::{wl_subtree_kernel, random_walk_kernel, sliced_wasserstein_graph_kernel,
+//! structural_node_features}` instead. This module will be removed in a future release.
 //!
 //! These kernels measure structural similarity between graphs, connecting
 //! RKHS methods to graph-structured data.
@@ -41,6 +46,7 @@ use rand::SeedableRng;
 /// let k = wl_subtree_kernel(&adj, &labels, &adj, &labels, 2);
 /// assert!(k > 0.0);
 /// ```
+#[deprecated(since = "0.2.0", note = "use `graphops::wl_subtree_kernel` instead")]
 pub fn wl_subtree_kernel(
     adj1: &[Vec<usize>],
     labels1: &[u64],
@@ -172,6 +178,7 @@ fn histogram_dot(labels1: &[u64], labels2: &[u64]) -> f64 {
 /// let k = random_walk_kernel(&adj1, &adj2, 3, 0.1);
 /// assert!(k > 0.0);
 /// ```
+#[deprecated(since = "0.2.0", note = "use `graphops::random_walk_kernel` instead")]
 pub fn random_walk_kernel(
     adj1: &[Vec<usize>],
     adj2: &[Vec<usize>],
@@ -260,6 +267,10 @@ pub fn random_walk_kernel(
 /// let k = sliced_wasserstein_graph_kernel(&f1, &f2, 50, 1.0, 42);
 /// assert!(k > 0.0 && k <= 1.0);
 /// ```
+#[deprecated(
+    since = "0.2.0",
+    note = "use `graphops::sliced_wasserstein_graph_kernel` instead"
+)]
 pub fn sliced_wasserstein_graph_kernel(
     features1: &[Vec<f64>],
     features2: &[Vec<f64>],
@@ -413,6 +424,7 @@ fn dot(a: &[f64], b: &[f64]) -> f64 {
 /// assert!((features[0][0] - 2.0).abs() < 1e-10); // degree
 /// assert!((features[0][1] - 1.0).abs() < 1e-10); // clustering
 /// ```
+#[deprecated(since = "0.2.0", note = "use `graphops::structural_node_features` instead")]
 pub fn structural_node_features(adj: &[Vec<usize>]) -> Vec<Vec<f64>> {
     let n = adj.len();
     let mut features = Vec::with_capacity(n);
@@ -452,6 +464,7 @@ pub fn structural_node_features(adj: &[Vec<usize>]) -> Vec<Vec<f64>> {
 }
 
 #[cfg(test)]
+#[allow(deprecated)]
 mod tests {
     use super::*;
 
