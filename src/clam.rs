@@ -1,10 +1,19 @@
-//! ClAM: Clustering with Associative Memory helpers.
+#![allow(deprecated)]
+//! CLAM: Clustering with Associative Memory helpers.
+//!
+//! **Deprecated**: this module has moved to the `clump` crate (feature `rkhs`).
+//! Use `clump::clam::{am_assign, am_soft_assign, am_contract, clam_loss}` instead.
+//! This module will be removed in a future release.
 //!
 //! Based on Saha et al. (2023), "End-to-End Differentiable Clustering with AM".
 
 use crate::{energy_lse_grad, retrieve_memory};
 
 /// Hard assignment of points to cluster centroids (nearest centroid by Euclidean distance).
+#[deprecated(
+    since = "0.2.0",
+    note = "use `clump::clam::am_assign` (with feature `rkhs`) instead"
+)]
 pub fn am_assign(data: &[Vec<f64>], centroids: &[Vec<f64>]) -> Vec<usize> {
     data.iter()
         .map(|point| {
@@ -28,7 +37,11 @@ pub fn am_assign(data: &[Vec<f64>], centroids: &[Vec<f64>]) -> Vec<usize> {
 
 /// Soft assignment (probabilities) of points to cluster centroids.
 ///
-/// P(i) = exp(-beta/2 ||x - c_i||^2) / Σ_j exp(-beta/2 ||x - c_j||^2)
+/// `P(i) = exp(-beta/2 ||x - c_i||^2) / Σ_j exp(-beta/2 ||x - c_j||^2)`
+#[deprecated(
+    since = "0.2.0",
+    note = "use `clump::clam::am_soft_assign` (with feature `rkhs`) instead"
+)]
 pub fn am_soft_assign(data: &[Vec<f64>], centroids: &[Vec<f64>], beta: f64) -> Vec<Vec<f64>> {
     data.iter()
         .map(|point| {
@@ -58,6 +71,10 @@ pub fn am_soft_assign(data: &[Vec<f64>], centroids: &[Vec<f64>], beta: f64) -> V
 }
 
 /// Contract a point toward centroids using AM energy descent.
+#[deprecated(
+    since = "0.2.0",
+    note = "use `clump::clam::am_contract` (with feature `rkhs`) instead"
+)]
 pub fn am_contract(
     point: &[f64],
     centroids: &[Vec<f64>],
@@ -76,9 +93,13 @@ pub fn am_contract(
     contracted
 }
 
-/// Differentiable clustering loss (ClAM loss).
+/// Differentiable clustering loss (CLAM loss).
 ///
-/// L = Σ ||x_i - contract(x_i, centroids)||^2
+/// `L = Σ_i ||x_i - contract(x_i, centroids)||^2`
+#[deprecated(
+    since = "0.2.0",
+    note = "use `clump::clam::clam_loss` (with feature `rkhs`) instead"
+)]
 pub fn clam_loss(
     data: &[Vec<f64>],
     centroids: &[Vec<f64>],
