@@ -131,6 +131,9 @@ pub mod clam;
 /// Kernels on probability distributions.
 pub mod distribution_kernel;
 /// Kernels on labeled graphs.
+///
+/// **Deprecated**: use `graphops::graph_kernel` instead.
+#[deprecated(since = "0.2.0", note = "use `graphops::graph_kernel` instead")]
 pub mod graph_kernel;
 /// Kernel quantile embeddings for tail-sensitive distribution comparison.
 pub mod quantile_kernel;
@@ -140,6 +143,7 @@ pub use distribution_kernel::{
     expected_likelihood_kernel, fisher_kernel_categorical, jensen_shannon_kernel,
     probability_product_kernel,
 };
+#[allow(deprecated)]
 pub use graph_kernel::{
     random_walk_kernel, sliced_wasserstein_graph_kernel, structural_node_features,
     wl_subtree_kernel,
