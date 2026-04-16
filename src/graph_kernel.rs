@@ -424,7 +424,10 @@ fn dot(a: &[f64], b: &[f64]) -> f64 {
 /// assert!((features[0][0] - 2.0).abs() < 1e-10); // degree
 /// assert!((features[0][1] - 1.0).abs() < 1e-10); // clustering
 /// ```
-#[deprecated(since = "0.2.0", note = "use `graphops::structural_node_features` instead")]
+#[deprecated(
+    since = "0.2.0",
+    note = "use `graphops::structural_node_features` instead"
+)]
 pub fn structural_node_features(adj: &[Vec<usize>]) -> Vec<Vec<f64>> {
     let n = adj.len();
     let mut features = Vec::with_capacity(n);

@@ -126,7 +126,13 @@
 use ndarray::{Array1, Array2, ArrayView2};
 use rand::Rng;
 
-/// ClAM: Clustering with Associative Memory helpers.
+/// CLAM: Clustering with Associative Memory helpers.
+///
+/// **Deprecated**: use `clump::clam` (with feature `rkhs`) instead.
+#[deprecated(
+    since = "0.2.0",
+    note = "use `clump::clam` with feature `rkhs` instead"
+)]
 pub mod clam;
 /// Kernels on probability distributions.
 pub mod distribution_kernel;
@@ -138,6 +144,7 @@ pub mod graph_kernel;
 /// Kernel quantile embeddings for tail-sensitive distribution comparison.
 pub mod quantile_kernel;
 
+#[allow(deprecated)]
 pub use clam::{am_assign, am_contract, am_soft_assign, clam_loss};
 pub use distribution_kernel::{
     expected_likelihood_kernel, fisher_kernel_categorical, jensen_shannon_kernel,
