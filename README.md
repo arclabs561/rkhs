@@ -14,7 +14,7 @@ Dual-licensed under MIT or Apache-2.0.
 
 ```toml
 [dependencies]
-rkhs = "0.1.3"
+rkhs = "0.2.1"
 ```
 
 ```rust
