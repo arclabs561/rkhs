@@ -1,9 +1,9 @@
 [package]
 name = "rkhs"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Arc <attobop@gmail.com>"]
 edition = "2021"
-description = "Reproducing Kernel Hilbert Space: kernels, MMD, and Dense Associative Memory (LSE/LSR energy)"
+description = "Reproducing Kernel Hilbert Space: kernels, MMD, and kernel quantile embeddings (re-exports hopfield for AM)"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/arclabs561/rkhs"
 homepage = "https://github.com/arclabs561/rkhs"
@@ -16,6 +16,7 @@ categories = ["algorithms", "science", "mathematics"]
 [dependencies]
 ndarray = "0.16"
 rand = "0.9"
+hopfield = "0.1"
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
