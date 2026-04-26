@@ -4,7 +4,7 @@
 [![Documentation](https://docs.rs/rkhs/badge.svg)](https://docs.rs/rkhs)
 [![CI](https://github.com/arclabs561/rkhs/actions/workflows/ci.yml/badge.svg)](https://github.com/arclabs561/rkhs/actions/workflows/ci.yml)
 
-Reproducing-kernel-Hilbert-space (RKHS) primitives in Rust: kernels,
+Reproducing-kernel-Hilbert-space (RKHS) primitives: kernels,
 maximum mean discrepancy (MMD), and kernel quantile embeddings.
 
 Dual-licensed under MIT or Apache-2.0.
