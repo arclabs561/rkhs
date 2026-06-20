@@ -11,6 +11,9 @@ Dual-licensed under MIT or Apache-2.0.
 
 [crates.io](https://crates.io/crates/rkhs) | [docs.rs](https://docs.rs/rkhs)
 
+See [examples/README.md](examples/README.md) for runnable examples covering
+MMD, associative-memory clustering, kernel thinning, and Gram matrix spectra.
+
 ## Quickstart
 
 ```toml
