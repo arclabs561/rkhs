@@ -4,15 +4,15 @@
 [![Documentation](https://docs.rs/rkhs/badge.svg)](https://docs.rs/rkhs)
 [![CI](https://github.com/arclabs561/rkhs/actions/workflows/ci.yml/badge.svg)](https://github.com/arclabs561/rkhs/actions/workflows/ci.yml)
 
-Reproducing-kernel-Hilbert-space (RKHS) primitives: kernels,
-maximum mean discrepancy (MMD), and kernel quantile embeddings.
+Kernel methods.
 
 Dual-licensed under MIT or Apache-2.0.
 
 [crates.io](https://crates.io/crates/rkhs) | [docs.rs](https://docs.rs/rkhs)
 
 See [examples/README.md](examples/README.md) for runnable examples covering
-MMD, associative-memory clustering, kernel thinning, and Gram matrix spectra.
+MMD, kernel thinning, Gram matrix spectra, and compatibility re-exports from
+`hopfield`.
 
 ## Quickstart
 
@@ -45,9 +45,9 @@ let (_, p_value) = mmd_permutation_test(&x, &y, |a, b| rbf(a, b, 1.0), 1000);
 | `mmd_unbiased` | Unbiased MMD U-statistic |
 | `mmd_permutation_test` | Two-sample test with p-value |
 | `median_bandwidth` | Bandwidth selection heuristic |
-| `energy_lse` | Log-Sum-Exp energy (Dense AM with RBF) |
-| `energy_lsr` | Log-Sum-ReLU energy (Dense AM with Epanechnikov) |
-| `retrieve_memory` | Memory retrieval via energy descent |
+| `energy_lse` | Hopfield LSE energy, re-exported from `hopfield` |
+| `energy_lsr` | Hopfield LSR energy, re-exported from `hopfield` |
+| `retrieve_memory` | Hopfield retrieval loop, re-exported from `hopfield` |
 
 ## Why MMD
 

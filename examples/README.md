@@ -1,7 +1,7 @@
 # rkhs examples
 
-Examples for kernel distances, associative-memory clustering, and small
-spectral diagnostics.
+Examples for kernel distances, kernel thinning, compatibility re-exports from
+`hopfield`, and small spectral diagnostics.
 
 ## Running
 
@@ -28,8 +28,7 @@ Use `cargo test --examples` to compile every example.
 
 ## Reading path
 
-Start with `distribution_mmd` if you want the core RKHS use case: kernel
-distances between empirical distributions. Use `clam_vs_kmeans` next if you
-want to see why the associative-memory helpers are in this crate. Use the RMT
-examples when you need to understand why a kernel matrix has stopped separating
-signal from noise.
+Start with `distribution_mmd` for kernel distances between empirical
+distributions. Use the `clam_*` examples only if you need the compatibility
+re-exports from `hopfield`. Use the RMT examples when you need to understand
+why a kernel matrix has stopped separating signal from noise.

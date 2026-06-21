@@ -1,6 +1,6 @@
 //! # rkhs
 //!
-//! Reproducing Kernel Hilbert Space primitives for distribution comparison.
+//! Kernel methods.
 //!
 //! ## Why "RKHS"?
 //!
@@ -8,9 +8,9 @@
 //! kernel methods live. Every positive-definite kernel k(x,y) defines an RKHS
 //! (via Mercer's theorem), and every RKHS has a unique reproducing kernel.
 //!
-//! This crate provides the primitives: kernels, Gram matrices, MMD, and kernel
-//! quantile embeddings. Dense Associative Memory (AM) functions are re-exported
-//! from the [`hopfield`] crate.
+//! This crate provides kernels, Gram matrices, MMD, and kernel quantile
+//! embeddings. A small set of dense associative-memory functions is re-exported
+//! from [`hopfield`] for compatibility with earlier examples.
 //!
 //! ## Intuition
 //!
@@ -30,10 +30,6 @@
 //! | [`epanechnikov`] | Optimal kernel for density estimation |
 //! | [`polynomial`] | Polynomial kernel |
 //! | [`kernel_matrix`] | Gram matrix K\[i,j\] = k(x_i, x_j) |
-//! | [`kernel_sum`] | Sum Σ κ(v, ξ^μ) for AM/kernel machines (from `hopfield`) |
-//! | [`energy_lse`] | Log-Sum-Exp energy (Dense AM with RBF) (from `hopfield`) |
-//! | [`energy_lsr`] | Log-Sum-ReLU energy (Dense AM with Epanechnikov) (from `hopfield`) |
-//! | [`retrieve_memory`] | Memory retrieval via energy descent (from `hopfield`) |
 //! | [`mmd_biased`] | O(n²) biased MMD estimate |
 //! | [`mmd_unbiased`] | O(n²) unbiased MMD u-statistic |
 //! | [`mmd_permutation_test`] | Significance test via permutation |
@@ -43,41 +39,6 @@
 //! | [`quantile_function_embedding`] | Kernel-smoothed quantile function at specified levels |
 //! | [`quantile_distribution_kernel`] | Kernel between distributions via quantile embeddings |
 //! | [`quantile_gram_matrix`] | Gram matrix restricted to a quantile level |
-//!
-//! ## Modern Hopfield Networks in 10 Lines
-//!
-//! Dense Associative Memory (AM) functions are provided by the [`hopfield`] crate
-//! and re-exported here for convenience:
-//!
-//! ```rust
-//! use rkhs::{energy_lse_grad, retrieve_memory};
-//!
-//! // Store three patterns (colours in RGB-ish space)
-//! let memories = vec![
-//!     vec![1.0, 0.0, 0.0],  // red
-//!     vec![0.0, 1.0, 0.0],  // green
-//!     vec![0.0, 0.0, 1.0],  // blue
-//! ];
-//!
-//! // Noisy query: mostly red but corrupted
-//! let query = vec![0.9, 0.2, 0.1];
-//!
-//! // Retrieve via energy descent
-//! let (retrieved, iters) = retrieve_memory(
-//!     query,
-//!     &memories,
-//!     |v, m| energy_lse_grad(v, m, 10.0),  // beta=10 → sharp attractor
-//!     0.1,   // learning rate
-//!     200,   // max iterations
-//!     1e-7,  // convergence tolerance
-//! );
-//!
-//! // Nearest pattern is red: [1,0,0]
-//! assert!(retrieved[0] > 0.9, "should converge to red");
-//! assert!(retrieved[1] < 0.1, "green component suppressed");
-//! assert!(retrieved[2] < 0.1, "blue component suppressed");
-//! println!("Converged in {iters} iterations: {retrieved:?}");
-//! ```
 //!
 //! ## Quick Start (MMD)
 //!
@@ -94,17 +55,10 @@
 //!
 //! ## Why Kernels Matter for ML
 //!
-//! - Associative Memory: Energy functions E = -log Σ κ(v, ξ) define memory landscapes
 //! - GAN evaluation: FID uses MMD-like statistics to compare generated vs real
 //! - Domain adaptation: Minimize MMD between source and target distributions
 //! - Two-sample testing: Detect distribution shift in production systems
 //! - Kernel regression: Nonparametric regression via kernel mean embedding
-//!
-//! ## Connections
-//!
-//! - [`logp`](../logp): MMD and KL divergence both measure distribution "distance"
-//! - [`wass`](../wass): Wasserstein and MMD are different ways to compare distributions
-//! - [`lapl`](../lapl): Gaussian kernel → Laplacian eigenvalue problems
 //!
 //! ## What Can Go Wrong
 //!
