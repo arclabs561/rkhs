@@ -28,6 +28,7 @@
 //! |----------|---------|
 //! | [`rbf`] | Radial Basis Function (Gaussian) kernel |
 //! | [`epanechnikov`] | Optimal kernel for density estimation |
+//! | [`matern_32`] | Matérn kernel (ν = 3/2; also [`matern_12`], [`matern_52`]) |
 //! | [`polynomial`] | Polynomial kernel |
 //! | [`kernel_matrix`] | Gram matrix K\[i,j\] = k(x_i, x_j) |
 //! | [`mmd_biased`] | O(n²) biased MMD estimate |
@@ -249,6 +250,77 @@ pub fn epanechnikov(x: &[f64], y: &[f64], sigma: f64) -> f64 {
         .sum();
     let u_sq = sq_dist / (sigma * sigma);
     (1.0 - u_sq).max(0.0)
+}
+
+/// Matérn kernel with smoothness ν = 1/2 (the exponential kernel):
+/// k(x, y) = exp(-d / ℓ), where d = ||x - y||₂ and ℓ is the lengthscale.
+///
+/// The roughest Matérn; sample paths are continuous but nowhere differentiable.
+/// Distinct from [`laplacian`], which uses the L1 norm rather than the L2 norm.
+///
+/// # Examples
+///
+/// ```rust
+/// use rkhs::matern_12;
+///
+/// let x = [0.0, 0.0];
+/// let y = [1.0, 0.0];
+/// // d = 1, ℓ = 1 => exp(-1)
+/// assert!((matern_12(&x, &y, 1.0) - (-1.0_f64).exp()).abs() < 1e-12);
+/// ```
+pub fn matern_12(x: &[f64], y: &[f64], lengthscale: f64) -> f64 {
+    debug_assert_valid_bandwidth(lengthscale);
+    let d = l2_distance(x, y);
+    (-d / lengthscale).exp()
+}
+
+/// Matérn kernel with smoothness ν = 3/2:
+/// k(x, y) = (1 + √3·d/ℓ)·exp(-√3·d/ℓ), where d = ||x - y||₂.
+///
+/// Sample paths are once differentiable; a common default in Gaussian-process
+/// regression.
+///
+/// # Examples
+///
+/// ```rust
+/// use rkhs::matern_32;
+///
+/// // At zero distance every Matérn kernel equals 1.
+/// assert!((matern_32(&[1.0, 2.0], &[1.0, 2.0], 1.0) - 1.0).abs() < 1e-12);
+/// ```
+pub fn matern_32(x: &[f64], y: &[f64], lengthscale: f64) -> f64 {
+    debug_assert_valid_bandwidth(lengthscale);
+    let s = 3.0_f64.sqrt() * l2_distance(x, y) / lengthscale;
+    (1.0 + s) * (-s).exp()
+}
+
+/// Matérn kernel with smoothness ν = 5/2:
+/// k(x, y) = (1 + √5·d/ℓ + 5d²/(3ℓ²))·exp(-√5·d/ℓ), where d = ||x - y||₂.
+///
+/// Sample paths are twice differentiable; the other common GP default, between
+/// ν = 3/2 and the infinitely-smooth [`rbf`] limit.
+///
+/// # Examples
+///
+/// ```rust
+/// use rkhs::matern_52;
+///
+/// assert!((matern_52(&[0.0], &[0.0], 1.0) - 1.0).abs() < 1e-12);
+/// ```
+pub fn matern_52(x: &[f64], y: &[f64], lengthscale: f64) -> f64 {
+    debug_assert_valid_bandwidth(lengthscale);
+    let r = l2_distance(x, y) / lengthscale;
+    let s = 5.0_f64.sqrt() * r;
+    (1.0 + s + 5.0 * r * r / 3.0) * (-s).exp()
+}
+
+/// Euclidean (L2) distance between two equal-length points.
+fn l2_distance(x: &[f64], y: &[f64]) -> f64 {
+    x.iter()
+        .zip(y.iter())
+        .map(|(xi, yi)| (xi - yi).powi(2))
+        .sum::<f64>()
+        .sqrt()
 }
 
 /// Triangle kernel: k(x, y) = max(0, 1 - ||x-y|| / σ)
@@ -725,6 +797,31 @@ mod tests {
         let x = vec![1.0, 2.0, 3.0];
         let k = rbf(&x, &x, 1.0);
         assert!((k - 1.0).abs() < 1e-10, "k(x, x) should be 1 for RBF");
+    }
+
+    #[test]
+    fn test_matern_known_values_and_smoothness_ordering() {
+        // Known-answer Matérn values at d = 1, lengthscale = 1, computed from the
+        // closed forms independently of the implementation.
+        let x = [0.0];
+        let y = [1.0];
+        assert!((matern_12(&x, &y, 1.0) - 0.367879).abs() < 1e-5, "m12");
+        assert!((matern_32(&x, &y, 1.0) - 0.483358).abs() < 1e-5, "m32");
+        assert!((matern_52(&x, &y, 1.0) - 0.523994).abs() < 1e-5, "m52");
+
+        // Increasing smoothness decays slower, so at a fixed distance
+        // m12 < m32 < m52 < rbf.
+        let m12 = matern_12(&x, &y, 1.0);
+        let m32 = matern_32(&x, &y, 1.0);
+        let m52 = matern_52(&x, &y, 1.0);
+        let rbf_v = rbf(&x, &y, 1.0);
+        assert!(
+            m12 < m32 && m32 < m52 && m52 < rbf_v,
+            "{m12} {m32} {m52} {rbf_v}"
+        );
+
+        // k(x, x) = 1 at zero distance.
+        assert!((matern_32(&x, &x, 1.0) - 1.0).abs() < 1e-12);
     }
 
     #[test]
