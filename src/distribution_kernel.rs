@@ -9,7 +9,7 @@
 //! with matching lengths. Behavior on invalid inputs is unspecified.
 //!
 //! # Related crates
-//! - [`logp`]: Provides the underlying divergences (KL, Hellinger, Jensen-Shannon) that these kernels are built from.
+//! - `logp`: Provides the underlying divergences (KL, Hellinger, Jensen-Shannon) that these kernels are built from.
 
 /// Probability Product Kernel: `k(p, q) = sum_i p_i^rho * q_i^rho`
 ///
