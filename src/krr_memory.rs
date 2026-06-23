@@ -243,6 +243,33 @@ mod tests {
     }
 
     #[test]
+    fn fixed_point_property_holds_across_dimensions_and_seeds() {
+        // Property generalization of `stores_far_above_the_hebbian_limit`: at a
+        // moderate load (P/N = 0.5) every stored pattern must be an exact fixed
+        // point, regardless of the ambient dimension or the random pattern set.
+        // Sweeping the (n, seed) grid risks the ridge solve and retrieval far
+        // more than a single fixture: a dimension- or configuration-specific
+        // failure in the Cholesky solve or the kernel scaling would surface here
+        // but pass the fixed-seed test.
+        for &n in &[8usize, 12, 20, 32] {
+            let sigma = (n as f64 / 2.0).sqrt();
+            for seed in [1u64, 7, 42, 101, 2024] {
+                let p = n / 2; // P/N = 0.5
+                let patterns = random_bipolar(p, n, seed);
+                let mem = KrrMemory::train(&patterns, sigma, 0.01)
+                    .expect("train should succeed on valid bipolar patterns");
+                for pat in &patterns {
+                    let recalled = mem.retrieve(pat, 25);
+                    assert!(
+                        overlap(&recalled, pat) > 0.95,
+                        "stored pattern not a fixed point at n={n}, seed={seed}, P/N=0.5"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
     fn rejects_bad_input() {
         assert!(KrrMemory::train(&[], 1.0, 0.01).is_none());
         assert!(KrrMemory::train(&[vec![1.0, -1.0]], 0.0, 0.01).is_none());
