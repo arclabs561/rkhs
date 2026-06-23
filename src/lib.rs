@@ -93,6 +93,8 @@ pub mod distribution_kernel;
 ///
 /// **Deprecated**: use `graphops::graph_kernel` instead.
 pub mod graph_kernel;
+/// Kernel Ridge Regression associative memory (high-capacity Hopfield network).
+pub mod krr_memory;
 /// Kernel quantile embeddings for tail-sensitive distribution comparison.
 pub mod quantile_kernel;
 
@@ -110,6 +112,7 @@ pub use graph_kernel::{
 pub use hopfield::{
     energy_lse, energy_lse_grad, energy_lsr, energy_lsr_grad, kernel_sum, retrieve_memory,
 };
+pub use krr_memory::KrrMemory;
 pub use quantile_kernel::{
     kernel_quantile_embedding, qmmd, quantile_distribution_kernel, quantile_function_embedding,
     quantile_gram_matrix, weighted_qmmd, QuantileWeight,
