@@ -18,7 +18,7 @@ MMD, kernel thinning, Gram matrix spectra, and compatibility re-exports from
 
 ```toml
 [dependencies]
-rkhs = "0.2.2"
+rkhs = "0.3.0"
 ```
 
 ```rust

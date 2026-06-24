@@ -1,6 +1,6 @@
 [package]
 name = "rkhs"
-version = "0.2.2"
+version = "0.3.0"
 authors = ["Arc <attobop@gmail.com>"]
 edition = "2021"
 description = "Kernel methods"
