@@ -11,8 +11,9 @@ Dual-licensed under MIT or Apache-2.0.
 [crates.io](https://crates.io/crates/rkhs) | [docs.rs](https://docs.rs/rkhs)
 
 See [examples/README.md](examples/README.md) for runnable examples covering
-MMD, kernel thinning, Gram matrix spectra, and compatibility re-exports from
-`hopfield`.
+MMD, kernel thinning, Gram matrix spectra, the KRR-Hopfield associative memory
+(`associative_memory`, `clam_clustering`), and Hopfield energy functions
+re-exported from `hopfield`.
 
 ## Quickstart
 
