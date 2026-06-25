@@ -19,6 +19,10 @@ jobs:
         run: cargo check --all-targets
       - name: test
         run: cargo test
+      - name: run example assertions
+        run: |
+          cargo run --example clam_clustering
+          cargo run --example distribution_mmd
       - name: fmt
         run: cargo fmt --all -- --check
       - name: clippy
