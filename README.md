@@ -2,9 +2,15 @@
 
 [![crates.io](https://img.shields.io/crates/v/rkhs.svg)](https://crates.io/crates/rkhs)
 [![Documentation](https://docs.rs/rkhs/badge.svg)](https://docs.rs/rkhs)
-[![CI](https://github.com/arclabs561/rkhs/actions/workflows/ci.yml/badge.svg)](https://github.com/arclabs561/rkhs/actions/workflows/ci.yml)
 
-Kernel methods.
+Positive-definite kernels and the methods built on them: Gram matrices, Maximum
+Mean Discrepancy (MMD) two-sample tests, kernel quantile embeddings,
+distribution kernels, and a kernel ridge regression associative memory. Kernels
+measure similarity in a (possibly infinite-dimensional) feature space without
+forming the features explicitly, so nonlinear methods reduce to linear algebra
+on the Gram matrix. Typical use is comparing two empirical distributions
+(distribution-shift detection, GAN evaluation, domain adaptation) or storing and
+retrieving patterns by kernel similarity.
 
 Dual-licensed under MIT or Apache-2.0.
 
@@ -35,20 +41,30 @@ let mmd = mmd_unbiased(&x, &y, |a, b| rbf(a, b, 1.0));
 let (_, p_value) = mmd_permutation_test(&x, &y, |a, b| rbf(a, b, 1.0), 1000);
 ```
 
-## Functions
+## Methods
 
-| Function | Purpose |
-|----------|---------|
-| `rbf` | Gaussian/RBF kernel |
-| `polynomial` | Polynomial kernel |
-| `kernel_matrix` | n x n Gram matrix |
-| `mmd_biased` | Biased MMD estimate |
-| `mmd_unbiased` | Unbiased MMD U-statistic |
-| `mmd_permutation_test` | Two-sample test with p-value |
-| `median_bandwidth` | Bandwidth selection heuristic |
-| `energy_lse` | Hopfield LSE energy, re-exported from `hopfield` |
-| `energy_lsr` | Hopfield LSR energy, re-exported from `hopfield` |
-| `retrieve_memory` | Hopfield retrieval loop, re-exported from `hopfield` |
+Kernels: `rbf`, `laplacian`, `polynomial`, `linear`, `epanechnikov`,
+`matern_12` / `matern_32` / `matern_52`, `triangle`, `cosine`, `quartic`,
+`triweight`, `tricube`.
+
+Gram matrices: `kernel_matrix`, `rbf_kernel_matrix_ndarray`.
+
+MMD two-sample tests: `mmd_biased`, `mmd_unbiased`, `mmd_permutation_test`,
+`median_bandwidth` (bandwidth heuristic).
+
+Quantile kernels (`quantile_kernel`): `qmmd`, `weighted_qmmd`,
+`kernel_quantile_embedding`, `quantile_function_embedding`,
+`quantile_distribution_kernel`, `quantile_gram_matrix`.
+
+Distribution kernels (`distribution_kernel`): `jensen_shannon_kernel`,
+`probability_product_kernel`, `expected_likelihood_kernel`,
+`fisher_kernel_categorical`.
+
+Associative memory: `KrrMemory` (kernel ridge regression; `train` / `step` /
+`retrieve`), plus `energy_lse`, `energy_lsr`, and `retrieve_memory` re-exported
+from `hopfield`.
+
+Deprecated: `clam` (use `clump::clam`), `graph_kernel` (use `graphops`).
 
 ## Why MMD
 
@@ -63,5 +79,5 @@ kernel mean embeddings. Given samples from P and Q, it tests whether P = Q.
 ## Why "rkhs"
 
 Every positive-definite kernel k(x,y) uniquely defines a Reproducing Kernel
-Hilbert Space (Moore-Aronszajn theorem). MMD, kernel PCA, SVM, Gaussian
-processes -- all operate in this space. The name reflects the unifying structure.
+Hilbert Space (Moore-Aronszajn theorem). MMD, kernel PCA, SVM, and Gaussian
+processes all operate in this space. The name reflects the unifying structure.
