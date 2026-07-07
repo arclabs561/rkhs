@@ -1,10 +1,10 @@
-//! Kernel thinning demo: select a coreset from random 2D points using rkhs + kuji.
+//! Kernel thinning demo: select a coreset from random 2D points using rkhs + drawset.
 //!
 //! Generates 200 random 2D points, computes the RBF Gram matrix with rkhs,
-//! then uses kuji's kernel_thin to select 20 representative points.
+//! then uses drawset's kernel_thin to select 20 representative points.
 //! Compares the thinned subset's MMD against a random subset of the same size.
 
-use kuji::{kernel_thin, mmd_sq_from_gram};
+use drawset::{kernel_thin, mmd_sq_from_gram};
 use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
 use rkhs::{kernel_matrix, rbf};
@@ -29,7 +29,7 @@ fn main() {
     let sigma = 1.0;
     let gram_nd = kernel_matrix(&points, |a, b| rbf(a, b, sigma));
 
-    // Flatten to row-major for kuji
+    // Flatten to row-major for drawset
     let gram: Vec<f64> = gram_nd.iter().copied().collect();
 
     // Kernel thinning
