@@ -3,18 +3,10 @@
 [![crates.io](https://img.shields.io/crates/v/rkhs.svg)](https://crates.io/crates/rkhs)
 [![Documentation](https://docs.rs/rkhs/badge.svg)](https://docs.rs/rkhs)
 
-Positive-definite kernels and the methods built on them: Gram matrices, Maximum
-Mean Discrepancy (MMD) two-sample tests, kernel quantile embeddings,
-distribution kernels, and a kernel ridge regression associative memory. Kernels
-measure similarity in a (possibly infinite-dimensional) feature space without
-forming the features explicitly, so nonlinear methods reduce to linear algebra
-on the Gram matrix. Typical use is comparing two empirical distributions
-(distribution-shift detection, GAN evaluation, domain adaptation) or storing and
-retrieving patterns by kernel similarity.
+Kernel methods.
 
-Dual-licensed under MIT or Apache-2.0.
-
-[crates.io](https://crates.io/crates/rkhs) | [docs.rs](https://docs.rs/rkhs)
+`rkhs` provides positive-definite kernels, Gram matrices, MMD two-sample tests,
+quantile and distribution kernels, and a kernel ridge regression memory.
 
 See [examples/README.md](examples/README.md) for runnable examples covering
 MMD, kernel thinning, Gram matrix spectra, the KRR-Hopfield associative memory
@@ -81,3 +73,5 @@ kernel mean embeddings. Given samples from P and Q, it tests whether P = Q.
 Every positive-definite kernel k(x,y) uniquely defines a Reproducing Kernel
 Hilbert Space (Moore-Aronszajn theorem). MMD, kernel PCA, SVM, and Gaussian
 processes all operate in this space. The name reflects the unifying structure.
+
+Dual-licensed under MIT or Apache-2.0.
