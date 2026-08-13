@@ -70,6 +70,9 @@
 //! 5. Kernel not characteristic: Not all kernels can distinguish all distributions.
 //!    RBF is characteristic (good); polynomial is not (bad for two-sample test).
 //!
+//! Pairwise kernels panic when their inputs have different dimensions rather
+//! than silently ignoring trailing coordinates.
+//!
 //! ## References
 //!
 //! - Gretton et al. (2012). "A Kernel Two-Sample Test" (JMLR)
@@ -130,6 +133,16 @@ fn debug_assert_valid_bandwidth(sigma: f64) {
     );
 }
 
+#[track_caller]
+#[inline]
+fn assert_same_dimension(x: &[f64], y: &[f64]) {
+    assert_eq!(
+        x.len(),
+        y.len(),
+        "kernel inputs must have the same dimension"
+    );
+}
+
 /// Radial Basis Function (Gaussian) kernel: k(x, y) = exp(-||x-y||² / (2σ²))
 ///
 /// The most common kernel. Bandwidth σ controls smoothness:
@@ -155,6 +168,7 @@ fn debug_assert_valid_bandwidth(sigma: f64) {
 /// assert!((k - 0.606).abs() < 0.01);
 /// ```
 pub fn rbf(x: &[f64], y: &[f64], sigma: f64) -> f64 {
+    assert_same_dimension(x, y);
     debug_assert_valid_bandwidth(sigma);
     let sq_dist: f64 = x
         .iter()
@@ -187,6 +201,7 @@ pub fn rbf(x: &[f64], y: &[f64], sigma: f64) -> f64 {
 /// assert!((k - 144.0).abs() < 1e-10);
 /// ```
 pub fn polynomial(x: &[f64], y: &[f64], degree: u32, gamma: f64, coef0: f64) -> f64 {
+    assert_same_dimension(x, y);
     let dot: f64 = x.iter().zip(y.iter()).map(|(xi, yi)| xi * yi).sum();
     (gamma * dot + coef0).powi(degree as i32)
 }
@@ -205,6 +220,7 @@ pub fn polynomial(x: &[f64], y: &[f64], degree: u32, gamma: f64, coef0: f64) -> 
 /// assert_eq!(linear(&x, &y), 32.0);
 /// ```
 pub fn linear(x: &[f64], y: &[f64]) -> f64 {
+    assert_same_dimension(x, y);
     x.iter().zip(y.iter()).map(|(xi, yi)| xi * yi).sum()
 }
 
@@ -224,6 +240,7 @@ pub fn linear(x: &[f64], y: &[f64]) -> f64 {
 /// assert!((k - (-1.0_f64).exp()).abs() < 1e-12);
 /// ```
 pub fn laplacian(x: &[f64], y: &[f64], sigma: f64) -> f64 {
+    assert_same_dimension(x, y);
     debug_assert_valid_bandwidth(sigma);
     let l1_dist: f64 = x.iter().zip(y.iter()).map(|(xi, yi)| (xi - yi).abs()).sum();
     (-l1_dist / sigma).exp()
@@ -245,6 +262,7 @@ pub fn laplacian(x: &[f64], y: &[f64], sigma: f64) -> f64 {
 /// assert!((epanechnikov(&x, &y, 1.0) - 0.75).abs() < 1e-12);
 /// ```
 pub fn epanechnikov(x: &[f64], y: &[f64], sigma: f64) -> f64 {
+    assert_same_dimension(x, y);
     debug_assert_valid_bandwidth(sigma);
     let sq_dist: f64 = x
         .iter()
@@ -319,6 +337,7 @@ pub fn matern_52(x: &[f64], y: &[f64], lengthscale: f64) -> f64 {
 
 /// Euclidean (L2) distance between two equal-length points.
 fn l2_distance(x: &[f64], y: &[f64]) -> f64 {
+    assert_same_dimension(x, y);
     x.iter()
         .zip(y.iter())
         .map(|(xi, yi)| (xi - yi).powi(2))
@@ -341,6 +360,7 @@ fn l2_distance(x: &[f64], y: &[f64]) -> f64 {
 /// assert!((triangle(&x, &y, 1.0) - 0.75).abs() < 1e-12);
 /// ```
 pub fn triangle(x: &[f64], y: &[f64], sigma: f64) -> f64 {
+    assert_same_dimension(x, y);
     debug_assert_valid_bandwidth(sigma);
     let sq_dist: f64 = x
         .iter()
@@ -366,6 +386,7 @@ pub fn triangle(x: &[f64], y: &[f64], sigma: f64) -> f64 {
 /// assert!((cosine(&x, &y, 1.0) - 1.0).abs() < 1e-12);
 /// ```
 pub fn cosine(x: &[f64], y: &[f64], sigma: f64) -> f64 {
+    assert_same_dimension(x, y);
     debug_assert_valid_bandwidth(sigma);
     let sq_dist: f64 = x
         .iter()
@@ -423,6 +444,7 @@ pub fn triweight(x: &[f64], y: &[f64], sigma: f64) -> f64 {
 /// assert!((tricube(&x, &y, 1.0) - 1.0).abs() < 1e-12);
 /// ```
 pub fn tricube(x: &[f64], y: &[f64], sigma: f64) -> f64 {
+    assert_same_dimension(x, y);
     debug_assert_valid_bandwidth(sigma);
     let sq_dist: f64 = x
         .iter()
@@ -768,6 +790,12 @@ pub fn median_bandwidth(data: &[Vec<f64>]) -> f64 {
         return 1.0;
     }
 
+    let dimension = data[0].len();
+    assert!(
+        data.iter().all(|point| point.len() == dimension),
+        "all data points must have the same dimension"
+    );
+
     // Collect pairwise distances
     let mut distances = Vec::new();
     for i in 0..n {
@@ -800,6 +828,41 @@ mod tests {
         let x = vec![1.0, 2.0, 3.0];
         let k = rbf(&x, &x, 1.0);
         assert!((k - 1.0).abs() < 1e-10, "k(x, x) should be 1 for RBF");
+    }
+
+    #[test]
+    fn point_kernels_reject_mismatched_dimensions() {
+        let short = [0.0];
+        let long = [0.0, 1.0];
+
+        let kernels: &[(&str, &dyn Fn() -> f64)] = &[
+            ("rbf", &|| rbf(&short, &long, 1.0)),
+            ("polynomial", &|| polynomial(&short, &long, 2, 1.0, 1.0)),
+            ("linear", &|| linear(&short, &long)),
+            ("laplacian", &|| laplacian(&short, &long, 1.0)),
+            ("epanechnikov", &|| epanechnikov(&short, &long, 1.0)),
+            ("matern_12", &|| matern_12(&short, &long, 1.0)),
+            ("matern_32", &|| matern_32(&short, &long, 1.0)),
+            ("matern_52", &|| matern_52(&short, &long, 1.0)),
+            ("triangle", &|| triangle(&short, &long, 1.0)),
+            ("cosine", &|| cosine(&short, &long, 1.0)),
+            ("quartic", &|| quartic(&short, &long, 1.0)),
+            ("triweight", &|| triweight(&short, &long, 1.0)),
+            ("tricube", &|| tricube(&short, &long, 1.0)),
+        ];
+
+        for (name, kernel) in kernels {
+            assert!(
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(kernel)).is_err(),
+                "{name} accepted mismatched dimensions"
+            );
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "all data points must have the same dimension")]
+    fn median_bandwidth_rejects_ragged_data() {
+        let _ = median_bandwidth(&[vec![0.0], vec![0.0, 1.0]]);
     }
 
     #[test]

@@ -35,17 +35,23 @@ impl KrrMemory {
     /// Train on bipolar patterns (each entry ideally in `{-1, +1}`), an RBF
     /// bandwidth `sigma`, and ridge parameter `lambda`. Solves
     /// `(K + lambda I) alpha = X` by Cholesky. Returns `None` if the patterns are
-    /// empty, ragged, or the regularized Gram matrix is not positive-definite.
+    /// empty, ragged, or non-finite; if `sigma` is not finite and positive; if
+    /// `lambda` is not finite and non-negative; or if the regularized Gram matrix
+    /// is not positive-definite.
     ///
     /// To match the paper's `K(x, y) = exp(-||x - y||^2 / N)`, pass
     /// `sigma = (N / 2).sqrt()` (since `rbf` uses `exp(-||x-y||^2 / (2 sigma^2))`).
     pub fn train(patterns: &[Vec<f64>], sigma: f64, lambda: f64) -> Option<Self> {
         let p = patterns.len();
-        if p == 0 || sigma <= 0.0 {
+        if p == 0 || !sigma.is_finite() || sigma <= 0.0 || !lambda.is_finite() || lambda < 0.0 {
             return None;
         }
         let n = patterns[0].len();
-        if n == 0 || patterns.iter().any(|x| x.len() != n) {
+        if n == 0
+            || patterns
+                .iter()
+                .any(|x| x.len() != n || x.iter().any(|value| !value.is_finite()))
+        {
             return None;
         }
 
@@ -70,6 +76,9 @@ impl KrrMemory {
         }
 
         let alpha = cholesky_solve(&a, &x)?;
+        if alpha.iter().any(|value| !value.is_finite()) {
+            return None;
+        }
         Some(Self {
             patterns: patterns.to_vec(),
             alpha,
@@ -88,7 +97,13 @@ impl KrrMemory {
     }
 
     /// One synchronous update: `sign(k_s . alpha)`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `state` has a different dimension from the stored patterns or
+    /// contains a non-finite value.
     pub fn step(&self, state: &[f64]) -> Vec<f64> {
+        self.assert_valid_state(state);
         let p = self.patterns.len();
         let mut k = Array1::<f64>::zeros(p);
         for (mu, pat) in self.patterns.iter().enumerate() {
@@ -102,7 +117,13 @@ impl KrrMemory {
 
     /// Retrieve by iterating the synchronous update until a fixed point or
     /// `max_iters` is reached.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `query` has a different dimension from the stored patterns or
+    /// contains a non-finite value.
     pub fn retrieve(&self, query: &[f64], max_iters: usize) -> Vec<f64> {
+        self.assert_valid_state(query);
         let mut s = query.to_vec();
         for _ in 0..max_iters {
             let next = self.step(&s);
@@ -112,6 +133,19 @@ impl KrrMemory {
             s = next;
         }
         s
+    }
+
+    #[track_caller]
+    fn assert_valid_state(&self, state: &[f64]) {
+        assert_eq!(
+            state.len(),
+            self.patterns[0].len(),
+            "state must have the same dimension as stored patterns"
+        );
+        assert!(
+            state.iter().all(|value| value.is_finite()),
+            "state values must be finite"
+        );
     }
 }
 
@@ -129,7 +163,7 @@ fn cholesky_solve(a: &Array2<f64>, b: &Array2<f64>) -> Option<Array2<f64>> {
         for k in 0..j {
             diag -= l[[j, k]] * l[[j, k]];
         }
-        if diag <= 0.0 {
+        if !diag.is_finite() || diag <= 0.0 {
             return None;
         }
         let ljj = diag.sqrt();
@@ -139,7 +173,11 @@ fn cholesky_solve(a: &Array2<f64>, b: &Array2<f64>) -> Option<Array2<f64>> {
             for k in 0..j {
                 s -= l[[i, k]] * l[[j, k]];
             }
-            l[[i, j]] = s / ljj;
+            let value = s / ljj;
+            if !value.is_finite() {
+                return None;
+            }
+            l[[i, j]] = value;
         }
     }
 
@@ -153,6 +191,9 @@ fn cholesky_solve(a: &Array2<f64>, b: &Array2<f64>) -> Option<Array2<f64>> {
                 s -= l[[i, k]] * y[k];
             }
             y[i] = s / l[[i, i]];
+            if !y[i].is_finite() {
+                return None;
+            }
         }
         for i in (0..n).rev() {
             let mut s = y[i];
@@ -160,6 +201,9 @@ fn cholesky_solve(a: &Array2<f64>, b: &Array2<f64>) -> Option<Array2<f64>> {
                 s -= l[[k, i]] * x[[k, c]];
             }
             x[[i, c]] = s / l[[i, i]];
+            if !x[[i, c]].is_finite() {
+                return None;
+            }
         }
     }
     Some(x)
@@ -274,5 +318,57 @@ mod tests {
         assert!(KrrMemory::train(&[], 1.0, 0.01).is_none());
         assert!(KrrMemory::train(&[vec![1.0, -1.0]], 0.0, 0.01).is_none());
         assert!(KrrMemory::train(&[vec![1.0], vec![1.0, -1.0]], 1.0, 0.01).is_none());
+    }
+
+    #[test]
+    fn rejects_nonfinite_and_invalid_parameters() {
+        let patterns = [vec![1.0, -1.0], vec![-1.0, 1.0]];
+
+        for sigma in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY, -1.0] {
+            assert!(KrrMemory::train(&patterns, sigma, 0.01).is_none());
+        }
+        for lambda in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY, -0.01] {
+            assert!(KrrMemory::train(&patterns, 1.0, lambda).is_none());
+        }
+        for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            let invalid = [vec![value, -1.0], vec![-1.0, 1.0]];
+            assert!(KrrMemory::train(&invalid, 1.0, 0.01).is_none());
+        }
+    }
+
+    #[test]
+    fn zero_ridge_is_allowed_for_nonsingular_gram_matrix() {
+        let patterns = [vec![1.0, -1.0], vec![-1.0, 1.0]];
+        assert!(KrrMemory::train(&patterns, 1.0, 0.0).is_some());
+    }
+
+    #[test]
+    fn rejects_invalid_query_states() {
+        let patterns = [vec![1.0, -1.0], vec![-1.0, 1.0]];
+        let memory = KrrMemory::train(&patterns, 1.0, 0.01).unwrap();
+
+        for query in [
+            vec![1.0],
+            vec![1.0, -1.0, 1.0],
+            vec![f64::NAN, -1.0],
+            vec![f64::INFINITY, -1.0],
+            vec![f64::NEG_INFINITY, -1.0],
+        ] {
+            assert!(std::panic::catch_unwind(|| memory.step(&query)).is_err());
+            assert!(std::panic::catch_unwind(|| memory.retrieve(&query, 0)).is_err());
+        }
+    }
+
+    #[test]
+    fn cholesky_rejects_nonfinite_inputs() {
+        let b = ndarray::array![[1.0], [2.0]];
+        for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            let a = ndarray::array![[value, 0.0], [0.0, 1.0]];
+            assert!(cholesky_solve(&a, &b).is_none());
+
+            let invalid_b = ndarray::array![[value], [2.0]];
+            let identity = ndarray::Array2::<f64>::eye(2);
+            assert!(cholesky_solve(&identity, &invalid_b).is_none());
+        }
     }
 }

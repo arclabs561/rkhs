@@ -6,7 +6,8 @@
 //! Fisher information.
 //!
 //! All functions expect valid probability distributions (non-negative, sum to 1)
-//! with matching lengths. Behavior on invalid inputs is unspecified.
+//! with matching lengths. Functions panic when the lengths differ; other invalid
+//! inputs have unspecified behavior.
 //!
 //! # Related crates
 //! - `logp`: Provides the underlying divergences (KL, Hellinger, Jensen-Shannon) that these kernels are built from.
@@ -39,7 +40,7 @@
 /// assert!((k - 1.0).abs() < 1e-10);
 /// ```
 pub fn probability_product_kernel(p: &[f64], q: &[f64], rho: f64) -> f64 {
-    debug_assert!(p.len() == q.len(), "distributions must have same length");
+    assert_eq!(p.len(), q.len(), "distributions must have same length");
     debug_assert!(rho > 0.0, "rho must be positive");
 
     p.iter()
@@ -64,7 +65,7 @@ pub fn probability_product_kernel(p: &[f64], q: &[f64], rho: f64) -> f64 {
 /// assert!((k - 0.5).abs() < 1e-10);
 /// ```
 pub fn expected_likelihood_kernel(p: &[f64], q: &[f64]) -> f64 {
-    debug_assert!(p.len() == q.len(), "distributions must have same length");
+    assert_eq!(p.len(), q.len(), "distributions must have same length");
 
     p.iter().zip(q.iter()).map(|(&pi, &qi)| pi * qi).sum()
 }
@@ -96,7 +97,7 @@ pub fn expected_likelihood_kernel(p: &[f64], q: &[f64]) -> f64 {
 /// assert!((k - 1.0).abs() < 1e-10);
 /// ```
 pub fn jensen_shannon_kernel(p: &[f64], q: &[f64], lambda: f64) -> f64 {
-    debug_assert!(p.len() == q.len(), "distributions must have same length");
+    assert_eq!(p.len(), q.len(), "distributions must have same length");
     debug_assert!(lambda > 0.0, "lambda must be positive");
 
     // JSD(p, q) = 0.5 * KL(p || m) + 0.5 * KL(q || m) where m = (p + q) / 2
@@ -136,7 +137,7 @@ pub fn jensen_shannon_kernel(p: &[f64], q: &[f64], lambda: f64) -> f64 {
 /// assert!((k - 1.0).abs() < 1e-10);
 /// ```
 pub fn fisher_kernel_categorical(p: &[f64], q: &[f64]) -> f64 {
-    debug_assert!(p.len() == q.len(), "distributions must have same length");
+    assert_eq!(p.len(), q.len(), "distributions must have same length");
 
     p.iter()
         .zip(q.iter())
@@ -147,6 +148,31 @@ pub fn fisher_kernel_categorical(p: &[f64], q: &[f64]) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn distribution_kernels_reject_mismatched_dimensions() {
+        let short = [1.0];
+        let long = [0.5, 0.5];
+        let kernels: &[(&str, &dyn Fn() -> f64)] = &[
+            ("probability_product", &|| {
+                probability_product_kernel(&short, &long, 0.5)
+            }),
+            ("expected_likelihood", &|| {
+                expected_likelihood_kernel(&short, &long)
+            }),
+            ("jensen_shannon", &|| {
+                jensen_shannon_kernel(&short, &long, 1.0)
+            }),
+            ("fisher", &|| fisher_kernel_categorical(&short, &long)),
+        ];
+
+        for (name, kernel) in kernels {
+            assert!(
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(kernel)).is_err(),
+                "{name} accepted mismatched dimensions"
+            );
+        }
+    }
 
     // =========================================================================
     // Probability Product Kernel
