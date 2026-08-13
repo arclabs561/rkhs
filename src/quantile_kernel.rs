@@ -1,20 +1,18 @@
-//! Kernel quantile embeddings for tail-sensitive distribution comparison.
+//! Empirical lower-tail kernel summaries and truncated-MMD comparisons.
 //!
 //! Standard kernel mean embeddings map distributions to RKHS elements via
-//! `mu_P = E_{x~P}[k(x, .)]`. This captures the mean behavior but can miss
-//! tail differences between distributions.
+//! `mu_P = E_{x~P}[k(x, .)]`. The functions in this module instead form
+//! empirical prefixes by retaining observations at or below an interpolated
+//! sample quantile.
 //!
-//! Kernel quantile embeddings instead embed at each quantile level tau:
-//! the embedding at tau weights samples by their position relative to
-//! the tau-th quantile, making the comparison sensitive to distributional
-//! shape across all quantile levels.
+//! [`kernel_quantile_embedding`] embeds one such prefix. [`qmmd`] and
+//! [`weighted_qmmd`] average biased MMD estimates across a fixed grid of
+//! prefixes. These are finite-sample, lower-tail constructions; they are not
+//! estimators of the kernel quantile embeddings or discrepancies introduced
+//! by Naslidnyk, Chau, Briol, and Muandet.
 //!
-//! The Quantile Maximum Mean Discrepancy (QMMD) integrates MMD over
-//! quantile levels, giving a metric that is more sensitive to tail
-//! differences than standard MMD.
-//!
-//! Reference: Naslidnyk, Chau, Briol, Muandet (2025).
-//! "Kernel Quantile Embeddings"
+//! Related work: Naslidnyk, Chau, Briol, and Muandet (2025), "Kernel
+//! Quantile Embeddings."
 
 /// Kernel quantile embedding evaluated at given points.
 ///
@@ -73,7 +71,7 @@ pub fn kernel_quantile_embedding(
         .collect()
 }
 
-/// Quantile Maximum Mean Discrepancy between two sets of 1D samples.
+/// Average truncated MMD between two sets of 1D samples.
 ///
 /// Integrates MMD over quantile levels for tail-sensitive comparison:
 ///
@@ -82,9 +80,8 @@ pub fn kernel_quantile_embedding(
 /// where `P_tau` is the distribution P truncated at its tau-th quantile,
 /// and tau levels are uniformly spaced in (0, 1).
 ///
-/// QMMD is more sensitive to tail differences than standard MMD because
-/// it separately compares the distributions at each quantile level rather
-/// than averaging over all samples equally.
+/// This finite-sample statistic compares empirical lower-tail prefixes
+/// separately rather than pooling all observations into one estimate.
 ///
 /// # Arguments
 ///
@@ -125,10 +122,6 @@ pub fn qmmd(
 
         let trunc_p: Vec<f64> = sorted_p.iter().copied().filter(|&s| s <= q_p).collect();
         let trunc_q: Vec<f64> = sorted_q.iter().copied().filter(|&s| s <= q_q).collect();
-
-        if trunc_p.len() < 2 || trunc_q.len() < 2 {
-            continue;
-        }
 
         let mmd_sq = mmd_1d_biased(&trunc_p, &trunc_q, &kernel);
         total_mmd += mmd_sq;
@@ -280,12 +273,15 @@ pub enum QuantileWeight {
     /// Equal weight at all quantile levels.
     Uniform,
     /// Emphasize tail quantiles (near 0 and 1). Uses `w(tau) = (tau*(1-tau))^{-alpha}`
-    /// where `alpha > 0` controls tail emphasis. Larger alpha = heavier tails.
+    /// where `alpha` must be finite and non-negative. `alpha = 0` is uniform;
+    /// larger values put more weight near the endpoints.
     TailHeavy {
         /// Exponent controlling tail emphasis. Typical values: 0.5 to 1.0.
         alpha: f64,
     },
-    /// Custom weights, one per quantile level. Weights are normalized internally.
+    /// Custom weights, one per quantile level. Values must be finite and
+    /// non-negative with a finite, positive total. Weights are normalized
+    /// internally.
     Custom(Vec<f64>),
 }
 
@@ -296,18 +292,18 @@ impl QuantileWeight {
     fn weights(&self, num_quantiles: usize) -> Vec<f64> {
         let raw: Vec<f64> = match self {
             QuantileWeight::Uniform => vec![1.0; num_quantiles],
-            QuantileWeight::TailHeavy { alpha } => (1..=num_quantiles)
-                .map(|i| {
-                    let tau = i as f64 / (num_quantiles + 1) as f64;
-                    let base = tau * (1.0 - tau);
-                    // Avoid division by zero at boundaries (tau near 0 or 1).
-                    if base < 1e-15 {
-                        1e15_f64.min(1.0 / 1e-15_f64.powf(*alpha))
-                    } else {
-                        base.powf(-alpha)
-                    }
-                })
-                .collect(),
+            QuantileWeight::TailHeavy { alpha } => {
+                assert!(
+                    alpha.is_finite() && *alpha >= 0.0,
+                    "tail-weight alpha must be finite and non-negative, got {alpha}"
+                );
+                (1..=num_quantiles)
+                    .map(|i| {
+                        let tau = i as f64 / (num_quantiles + 1) as f64;
+                        (tau * (1.0 - tau)).powf(-alpha)
+                    })
+                    .collect()
+            }
             QuantileWeight::Custom(w) => {
                 assert_eq!(
                     w.len(),
@@ -319,8 +315,16 @@ impl QuantileWeight {
             }
         };
 
+        assert!(
+            raw.iter()
+                .all(|weight| weight.is_finite() && *weight >= 0.0),
+            "weights must be finite and non-negative"
+        );
         let sum: f64 = raw.iter().sum();
-        assert!(sum > 0.0, "weight sum must be positive");
+        assert!(
+            sum.is_finite() && sum > 0.0,
+            "weight sum must be finite and positive"
+        );
         raw.iter().map(|&w| w / sum).collect()
     }
 }
@@ -328,8 +332,8 @@ impl QuantileWeight {
 /// Weighted Quantile MMD between two sets of 1D samples.
 ///
 /// Like [`qmmd`], but allows non-uniform weighting of quantile levels.
-/// Tail-heavy weighting makes this more sensitive to distributional
-/// differences in the tails than uniform weighting.
+/// Tail-heavy weighting assigns relatively more mass to levels near the grid
+/// endpoints than uniform weighting.
 ///
 /// $$\text{WQMMD}^2(P, Q) = \sum_{t=1}^T w_t \cdot \text{MMD}^2(P_{\tau_t}, Q_{\tau_t})$$
 ///
@@ -347,7 +351,10 @@ impl QuantileWeight {
 ///
 /// # Panics
 ///
-/// Panics if either sample set is empty or `num_quantiles` is 0.
+/// Panics if either sample set is empty, `num_quantiles` is 0, or the
+/// weighting contains invalid values. Tail-weight `alpha` and custom weights
+/// must be finite and non-negative, and their total must be finite and
+/// positive.
 pub fn weighted_qmmd(
     samples_p: &[f64],
     samples_q: &[f64],
@@ -376,10 +383,6 @@ pub fn weighted_qmmd(
 
         let trunc_p: Vec<f64> = sorted_p.iter().copied().filter(|&s| s <= q_p).collect();
         let trunc_q: Vec<f64> = sorted_q.iter().copied().filter(|&s| s <= q_q).collect();
-
-        if trunc_p.len() < 2 || trunc_q.len() < 2 {
-            continue;
-        }
 
         let mmd_sq = mmd_1d_biased(&trunc_p, &trunc_q, &kernel);
         total += weights[i - 1] * mmd_sq;
@@ -519,6 +522,15 @@ mod tests {
             (pq - qp).abs() < 1e-12,
             "QMMD should be symmetric: {pq} vs {qp}"
         );
+    }
+
+    #[test]
+    fn qmmd_includes_singleton_prefixes() {
+        // Every interior empirical quantile of a two-point sample retains
+        // only its minimum. With k(x, y) = xy, biased MMD^2 between the
+        // singleton prefixes {0} and {2} is (0 - 2)^2 = 4.
+        let value = qmmd(&[0.0, 1.0], &[2.0, 3.0], |x, y| x * y, 3);
+        assert_eq!(value, 4.0);
     }
 
     #[test]
@@ -800,6 +812,52 @@ mod tests {
         let custom = QuantileWeight::Custom(vec![1.0, 0.0, 0.0, 0.0, 0.0]);
         let val = weighted_qmmd(&p, &q, rbf_1d, 5, &custom);
         assert!(val >= 0.0, "custom weighted QMMD should be non-negative");
+    }
+
+    #[test]
+    fn weighted_qmmd_includes_singleton_prefixes() {
+        // This uses the same independent closed form as the unweighted
+        // regression, but non-uniform weights ensure the weighted path is
+        // exercised rather than merely compared with qmmd.
+        let weighting = QuantileWeight::Custom(vec![1.0, 2.0, 3.0]);
+        let value = weighted_qmmd(&[0.0, 1.0], &[2.0, 3.0], |x, y| x * y, 3, &weighting);
+        assert_eq!(value, 4.0);
+    }
+
+    #[test]
+    #[should_panic(expected = "tail-weight alpha must be finite and non-negative")]
+    fn weighted_qmmd_rejects_negative_tail_alpha() {
+        weighted_qmmd(
+            &[0.0],
+            &[1.0],
+            rbf_1d,
+            1,
+            &QuantileWeight::TailHeavy { alpha: -0.5 },
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "weights must be finite and non-negative")]
+    fn weighted_qmmd_rejects_non_finite_custom_weight() {
+        weighted_qmmd(
+            &[0.0],
+            &[1.0],
+            rbf_1d,
+            1,
+            &QuantileWeight::Custom(vec![f64::NAN]),
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "weight sum must be finite and positive")]
+    fn weighted_qmmd_rejects_zero_custom_weight_total() {
+        weighted_qmmd(
+            &[0.0],
+            &[1.0],
+            rbf_1d,
+            2,
+            &QuantileWeight::Custom(vec![0.0, 0.0]),
+        );
     }
 
     // --- quantile_distribution_kernel tests ---
