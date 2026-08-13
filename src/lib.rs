@@ -96,6 +96,8 @@ pub mod distribution_kernel;
 ///
 /// **Deprecated**: use `graphops::graph_kernel` instead.
 pub mod graph_kernel;
+/// Kernel quantile discrepancies from fixed Gaussian draws.
+pub mod kqd;
 /// Kernel Ridge Regression associative memory (high-capacity Hopfield network).
 pub mod krr_memory;
 /// Kernel quantile embeddings for tail-sensitive distribution comparison.
