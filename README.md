@@ -5,7 +5,7 @@
 
 Kernel methods.
 
-`rkhs` provides positive-definite kernels, Gram matrices, MMD two-sample tests,
+`rkhs` provides common kernel functions, Gram matrices, MMD two-sample tests,
 quantile and distribution kernels, and a kernel ridge regression memory.
 
 See [examples/README.md](examples/README.md) for runnable examples covering
@@ -70,8 +70,9 @@ kernel mean embeddings. Given samples from P and Q, it tests whether P = Q.
 
 ## Why "rkhs"
 
-Every positive-definite kernel k(x,y) uniquely defines a Reproducing Kernel
-Hilbert Space (Moore-Aronszajn theorem). MMD, kernel PCA, SVM, and Gaussian
-processes all operate in this space. The name reflects the unifying structure.
+Every symmetric positive-definite kernel on a nonempty set defines a unique
+Reproducing Kernel Hilbert Space (Moore-Aronszajn theorem). MMD, kernel PCA,
+SVMs, and Gaussian processes use this structure. The name reflects that
+connection.
 
 Dual-licensed under MIT or Apache-2.0.

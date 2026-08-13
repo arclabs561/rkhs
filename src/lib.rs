@@ -5,8 +5,8 @@
 //! ## Why "RKHS"?
 //!
 //! A **Reproducing Kernel Hilbert Space** is the mathematical structure where
-//! kernel methods live. Every positive-definite kernel k(x,y) defines an RKHS
-//! (via Mercer's theorem), and every RKHS has a unique reproducing kernel.
+//! kernel methods live. Every symmetric positive-definite kernel on a nonempty
+//! set defines a unique RKHS (the Moore-Aronszajn theorem).
 //!
 //! This crate provides kernels, Gram matrices, MMD, and kernel quantile
 //! embeddings. A small set of dense associative-memory functions is re-exported
