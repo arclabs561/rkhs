@@ -34,6 +34,7 @@
 //! | [`mmd_biased`] | O(n²) biased MMD estimate |
 //! | [`mmd_unbiased`] | O(n²) unbiased MMD u-statistic |
 //! | [`mmd_permutation_test`] | Significance test via permutation |
+//! | [`mmd_permutation_test_seeded`] | The same test with a fixed RNG seed |
 //! | [`kernel_quantile_embedding`] | Kernel embedding at a quantile level |
 //! | [`qmmd`] | Quantile MMD (tail-sensitive distribution comparison) |
 //! | [`weighted_qmmd`] | QMMD with configurable quantile-level weighting |
@@ -81,6 +82,11 @@
 
 use ndarray::{Array1, Array2, ArrayView2};
 use rand::Rng;
+
+// Compile and run the README's Rust examples as doctests.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+struct ReadmeDoctests;
 
 /// CLAM: Clustering with Associative Memory helpers.
 ///
@@ -739,13 +745,46 @@ pub fn mmd_permutation_test<F>(
 where
     F: Fn(&[f64], &[f64]) -> f64 + Copy,
 {
+    mmd_permutation_test_seeded(x, y, kernel, num_permutations, rand::rng().random())
+}
+
+/// [`mmd_permutation_test`] with a caller-supplied RNG seed.
+///
+/// The same inputs and seed give the same p-value (for a given `rand` version),
+/// so tests and reported results can be reproduced.
+///
+/// # Example
+///
+/// ```rust
+/// use rkhs::{mmd_permutation_test_seeded, rbf};
+///
+/// let x = vec![vec![0.0], vec![0.1], vec![0.2], vec![0.3]];
+/// let y = vec![vec![10.0], vec![10.1], vec![10.2], vec![10.3]];
+/// let k = |a: &[f64], b: &[f64]| rbf(a, b, 1.0);
+///
+/// let first = mmd_permutation_test_seeded(&x, &y, k, 99, 7);
+/// let second = mmd_permutation_test_seeded(&x, &y, k, 99, 7);
+/// assert_eq!(first, second);
+/// ```
+pub fn mmd_permutation_test_seeded<F>(
+    x: &[Vec<f64>],
+    y: &[Vec<f64>],
+    kernel: F,
+    num_permutations: usize,
+    seed: u64,
+) -> (f64, f64)
+where
+    F: Fn(&[f64], &[f64]) -> f64 + Copy,
+{
+    use rand::SeedableRng;
+
     let observed_mmd = mmd_unbiased(x, y, kernel);
 
     // Pool samples
     let mut pooled: Vec<&Vec<f64>> = x.iter().chain(y.iter()).collect();
     let nx = x.len();
 
-    let mut rng = rand::rng();
+    let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
     let mut count_greater = 0usize;
 
     for _ in 0..num_permutations {

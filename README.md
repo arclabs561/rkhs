@@ -42,7 +42,10 @@ Kernels: `rbf`, `laplacian`, `polynomial`, `linear`, `epanechnikov`,
 Gram matrices: `kernel_matrix`, `rbf_kernel_matrix_ndarray`.
 
 MMD two-sample tests: `mmd_biased`, `mmd_unbiased`, `mmd_permutation_test`,
-`median_bandwidth` (bandwidth heuristic).
+`mmd_permutation_test_seeded` (fixed RNG seed for reproducible p-values),
+`median_bandwidth` (bandwidth heuristic). `tests/permutation_null.rs` checks
+that the permutation test rejects about 5% of seeded same-distribution
+replicates at level 0.05.
 
 Quantile kernels (`quantile_kernel`): `qmmd`, `weighted_qmmd`,
 `kernel_quantile_embedding`, `quantile_function_embedding`,
