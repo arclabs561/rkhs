@@ -315,8 +315,8 @@ fn sliced_wasserstein_distance(
         let mut proj1: Vec<f64> = features1.iter().map(|f| dot(f, &direction)).collect();
         let mut proj2: Vec<f64> = features2.iter().map(|f| dot(f, &direction)).collect();
 
-        proj1.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
-        proj2.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
+        proj1.sort_unstable_by(|a, b| a.total_cmp(b));
+        proj2.sort_unstable_by(|a, b| a.total_cmp(b));
 
         total_dist += wasserstein_1d(&proj1, &proj2);
     }
@@ -358,7 +358,7 @@ fn wasserstein_1d(sorted1: &[f64], sorted2: &[f64]) -> f64 {
     for k in 1..=m {
         breaks.push(k as f64 / m_f);
     }
-    breaks.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
+    breaks.sort_unstable_by(|a, b| a.total_cmp(b));
     breaks.dedup_by(|a, b| (*a - *b).abs() < 1e-15);
 
     let mut integral = 0.0;

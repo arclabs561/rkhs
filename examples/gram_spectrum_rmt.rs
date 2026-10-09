@@ -122,6 +122,6 @@ fn eigenvalues_symmetric(m: &Array2<f64>) -> Vec<f64> {
         a = new_a;
     }
     let mut eigs: Vec<f64> = (0..n).map(|i| a[[i, i]]).collect();
-    eigs.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    eigs.sort_by(|a, b| a.total_cmp(b));
     eigs
 }

@@ -52,7 +52,7 @@ pub fn kernel_quantile_embedding(
     );
 
     let mut sorted = samples.to_vec();
-    sorted.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
+    sorted.sort_unstable_by(|a, b| a.total_cmp(b));
 
     let quantile = empirical_quantile(&sorted, tau);
     let truncated: Vec<f64> = sorted.iter().copied().filter(|&s| s <= quantile).collect();
@@ -109,8 +109,8 @@ pub fn qmmd(
 
     let mut sorted_p = samples_p.to_vec();
     let mut sorted_q = samples_q.to_vec();
-    sorted_p.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
-    sorted_q.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
+    sorted_p.sort_unstable_by(|a, b| a.total_cmp(b));
+    sorted_q.sort_unstable_by(|a, b| a.total_cmp(b));
 
     let mut total_mmd = 0.0;
 
@@ -166,7 +166,7 @@ pub fn quantile_gram_matrix(
     );
 
     let mut sorted = samples.to_vec();
-    sorted.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
+    sorted.sort_unstable_by(|a, b| a.total_cmp(b));
     let quantile = empirical_quantile(&sorted, tau);
 
     let active: Vec<bool> = samples.iter().map(|&s| s <= quantile).collect();
@@ -231,7 +231,7 @@ pub fn quantile_function_embedding(
     }
 
     let mut sorted = samples.to_vec();
-    sorted.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
+    sorted.sort_unstable_by(|a, b| a.total_cmp(b));
     let n = sorted.len();
 
     if bandwidth <= 0.0 || n == 1 {
@@ -370,8 +370,8 @@ pub fn weighted_qmmd(
 
     let mut sorted_p = samples_p.to_vec();
     let mut sorted_q = samples_q.to_vec();
-    sorted_p.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
-    sorted_q.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
+    sorted_p.sort_unstable_by(|a, b| a.total_cmp(b));
+    sorted_q.sort_unstable_by(|a, b| a.total_cmp(b));
 
     let mut total = 0.0;
 
