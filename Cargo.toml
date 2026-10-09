@@ -3,8 +3,17 @@ name = "rkhs"
 version = "0.3.0"
 authors = ["Arc <attobop@gmail.com>"]
 edition = "2021"
+rust-version = "1.75"
 description = "Kernel methods"
 license = "MIT OR Apache-2.0"
+include = [
+  "/src/**/*.rs",
+  "/examples/**/*.rs",
+  "/Cargo.toml",
+  "/CHANGELOG.md",
+  "/LICENSE*",
+  "/README.md",
+]
 repository = "https://github.com/arclabs561/rkhs"
 homepage = "https://github.com/arclabs561/rkhs"
 documentation = "https://docs.rs/rkhs"
