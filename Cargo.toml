@@ -23,7 +23,7 @@ categories = ["algorithms", "science", "mathematics"]
 [workspace]
 
 [dependencies]
-ndarray = "0.16"
+ndarray = "0.17"
 rand = "0.9"
 hopfield = "0.1"
 
