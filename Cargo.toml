@@ -30,7 +30,7 @@ hopfield = "0.1"
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
 clump = "0.5"
-faer = "0.19"
+faer = "0.24"
 drawset = "0.1"
 rmt = "0.1"
 # Rosetta cross-language correctness fixtures (tests/rosetta_*.rs).
