@@ -17,7 +17,7 @@ re-exported from `hopfield`.
 
 ```toml
 [dependencies]
-rkhs = "0.3.0"
+rkhs = "0.3.1"
 ```
 
 ```rust
