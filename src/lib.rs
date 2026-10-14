@@ -570,6 +570,9 @@ pub fn rbf_kernel_matrix_ndarray(points: ArrayView2<'_, f64>, sigma: f64) -> Arr
 ///
 /// MMD² estimate (biased)
 ///
+/// Returns `0.0` without evaluating the kernel if either sample set is empty.
+/// Singleton sample sets are supported.
+///
 /// # Example
 ///
 /// ```rust
@@ -647,6 +650,10 @@ where
 ///
 /// Unbiased MMD² estimate
 ///
+/// If either sample set contains fewer than two samples, returns `0.0`
+/// without evaluating the kernel. This is the small-input fallback; the
+/// displayed estimator formula is not evaluated for these inputs.
+///
 /// # Example
 ///
 /// ```rust
@@ -722,6 +729,10 @@ where
 ///
 /// (mmd_observed, p_value)
 ///
+/// If either sample set contains fewer than two samples, the small-input
+/// fallback in [`mmd_unbiased`] makes the observed and permuted statistics
+/// zero. Every permutation ties, giving `(0.0, 1.0)`.
+///
 /// # Example
 ///
 /// ```rust
@@ -752,6 +763,7 @@ where
 ///
 /// The same inputs and seed give the same p-value (for a given `rand` version),
 /// so tests and reported results can be reproduced.
+/// The small-input fallback is the same as in [`mmd_permutation_test`].
 ///
 /// # Example
 ///
