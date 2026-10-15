@@ -1,5 +1,12 @@
 # Changelog
 
+## Source history (release attribution not established)
+
+These source changes are listed without assigning them to a published release.
+
+- Document the existing empty/singleton MMD estimator and permutation-test fallbacks. Executable behavior is unchanged.
+  ([source change](https://github.com/arclabs561/rkhs/commit/e97c28643d6dc295f8dadabc02cfcad3d6272e77))
+
 ## [Unreleased]
 
 ## [0.3.1] - 2026-10-09
