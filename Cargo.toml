@@ -24,7 +24,7 @@ categories = ["algorithms", "science", "mathematics"]
 
 [dependencies]
 ndarray = "0.16"
-rand = "0.9"
+rand = "0.10"
 hopfield = "0.1"
 
 [dev-dependencies]
