@@ -25,7 +25,7 @@ categories = ["algorithms", "science", "mathematics"]
 [dependencies]
 ndarray = "0.16"
 rand = "0.9"
-hopfield = "0.1"
+hopfield = "0.2"
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
