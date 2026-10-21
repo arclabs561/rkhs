@@ -28,7 +28,7 @@ rand = "0.9"
 hopfield = "0.1"
 
 [dev-dependencies]
-criterion = { version = "0.5", features = ["html_reports"] }
+criterion = { version = "0.8", features = ["html_reports"] }
 clump = "0.5"
 faer = "0.19"
 drawset = "0.1"
