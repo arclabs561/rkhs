@@ -459,7 +459,15 @@ fn empirical_quantile(sorted: &[f64], tau: f64) -> f64 {
         sorted[n - 1]
     } else {
         let frac = pos - lo as f64;
-        sorted[lo] * (1.0 - frac) + sorted[hi] * frac
+        // Interpolate as NumPy's `_lerp` does: `a + (b - a) t` returns `a`
+        // exactly when `a == b`, whereas `a (1 - t) + b t` can round below
+        // tied order statistics and empty the `s <= q` prefix.
+        let (a, b) = (sorted[lo], sorted[hi]);
+        if frac < 0.5 {
+            a + (b - a) * frac
+        } else {
+            b - (b - a) * (1.0 - frac)
+        }
     }
 }
 
@@ -531,6 +539,27 @@ mod tests {
         // singleton prefixes {0} and {2} is (0 - 2)^2 = 4.
         let value = qmmd(&[0.0, 1.0], &[2.0, 3.0], |x, y| x * y, 3);
         assert_eq!(value, 4.0);
+    }
+
+    #[test]
+    fn quantile_embedding_keeps_tied_samples() {
+        // Interpolating between two tied order statistics must return the
+        // tied value itself; 0.3 * (7/12) + 0.3 * (5/12) rounds below 0.3,
+        // which used to empty the `s <= q` prefix.
+        let emb = kernel_quantile_embedding(&[0.3, 0.3], &[0.3], 5.0 / 12.0, rbf_1d);
+        assert!((emb[0] - 1.0).abs() < 1e-12, "expected [1.0], got {emb:?}");
+    }
+
+    #[test]
+    fn qmmd_does_not_drop_levels_with_ties() {
+        // Every prefix is {0.3} vs {5.0}, so each level contributes
+        // 2 - 2 k(0.3, 5.0); an emptied prefix would contribute 0.
+        let value = qmmd(&[0.3, 0.3], &[5.0, 5.0], rbf_1d, 11);
+        let expected = 2.0 - 2.0 * rbf_1d(0.3, 5.0);
+        assert!(
+            (value - expected).abs() < 1e-9,
+            "qmmd = {value}, expected {expected}"
+        );
     }
 
     #[test]
