@@ -9,6 +9,13 @@ These source changes are listed without assigning them to a published release.
 
 ## [Unreleased]
 
+### Fixed
+
+- `kernel_quantile_embedding`, `quantile_gram_matrix`, `qmmd` and
+  `weighted_qmmd` no longer drop a level when the interpolated quantile
+  falls between tied samples: the interpolation now returns the tied value
+  exactly instead of rounding below it and emptying the `s <= q` prefix.
+
 ## [0.3.1] - 2026-10-09
 
 ### Added
