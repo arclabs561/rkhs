@@ -8,10 +8,7 @@ Kernel methods.
 `rkhs` provides common kernel functions, Gram matrices, MMD two-sample tests,
 quantile and distribution kernels, and a kernel ridge regression memory.
 
-See [examples/README.md](examples/README.md) for runnable examples covering
-MMD, kernel thinning, Gram matrix spectra, the KRR-Hopfield associative memory
-(`associative_memory`, `clam_clustering`), and Hopfield energy functions
-re-exported from `hopfield`.
+See [examples/README.md](examples/README.md) for runnable examples.
 
 ## Quickstart
 
@@ -21,17 +18,24 @@ rkhs = "0.3.1"
 ```
 
 ```rust
-use rkhs::{rbf, mmd_unbiased, mmd_permutation_test};
+use rkhs::{mmd_permutation_test_seeded, rbf};
 
 let x = vec![vec![0.0, 0.0], vec![0.1, 0.1], vec![0.2, 0.0]];
 let y = vec![vec![5.0, 5.0], vec![5.1, 5.1], vec![5.2, 5.0]];
 
-// MMD: kernel distance between distributions
-let mmd = mmd_unbiased(&x, &y, |a, b| rbf(a, b, 1.0));
-
-// Permutation test for significance
-let (_, p_value) = mmd_permutation_test(&x, &y, |a, b| rbf(a, b, 1.0), 1000);
+// Unbiased MMD estimate and a permutation-test p-value (999 shuffles, seed 0).
+let (mmd, p_value) = mmd_permutation_test_seeded(&x, &y, |a, b| rbf(a, b, 1.0), 999, 0);
+println!("mmd = {mmd:.3}, p = {p_value:.3}");
+assert!((mmd - 1.974).abs() < 1e-3);
 ```
+
+```text
+mmd = 1.974, p = 0.085
+```
+
+Three points per side allow only 20 distinct splits, two of which are as
+extreme as the observed one, so p stays near 0.1 however far apart the
+samples are.
 
 ## Methods
 
@@ -64,18 +68,9 @@ Deprecated: `clam` (use `clump::clam`), `graph_kernel` (use `graphops`).
 ## Why MMD
 
 MMD (Maximum Mean Discrepancy) measures distance between distributions using
-kernel mean embeddings. Given samples from P and Q, it tests whether P = Q.
+kernel mean embeddings. Given samples from P and Q, the permutation test asks
+whether P = Q.
 
-- Two-sample testing (detect distribution shift)
-- Domain adaptation (minimize source/target divergence)
-- GAN evaluation
-- Model criticism
-
-## Why "rkhs"
-
-Every symmetric positive-definite kernel on a nonempty set defines a unique
-Reproducing Kernel Hilbert Space (Moore-Aronszajn theorem). MMD, kernel PCA,
-SVMs, and Gaussian processes use this structure. The name reflects that
-connection.
+## License
 
 Dual-licensed under MIT or Apache-2.0.
