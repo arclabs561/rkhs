@@ -259,6 +259,15 @@ pub fn laplacian(x: &[f64], y: &[f64], sigma: f64) -> f64 {
 /// Optimal kernel for minimizing MISE in density estimation.
 /// Has compact support (zero outside radius σ).
 ///
+/// This is a smoothing kernel, not a positive-definite (Mercer) kernel, so it
+/// has no RKHS. Its 1-D Fourier transform, proportional to
+/// `(sin w - w cos w) / w³`, takes negative values, which by Bochner's
+/// theorem rules out positive definiteness on the line and therefore in any
+/// dimension. MMD computed with it is neither a metric nor a squared RKHS
+/// norm, and the biased estimate can be negative (see [`mmd_biased`]).
+/// [`quartic`] and [`triweight`] are powers of this kernel and share the
+/// limitation.
+///
 /// # Examples
 ///
 /// ```rust
@@ -408,6 +417,10 @@ pub fn cosine(x: &[f64], y: &[f64], sigma: f64) -> f64 {
 
 /// Quartic (Biweight) kernel: k(x, y) = max(0, 1 - ||x-y||² / σ²)²
 ///
+/// A smoothing kernel, not positive definite: its Fourier transform takes
+/// negative values, as for [`epanechnikov`]. MMD computed with it is neither
+/// a metric nor a squared RKHS norm.
+///
 /// # Examples
 ///
 /// ```rust
@@ -424,6 +437,10 @@ pub fn quartic(x: &[f64], y: &[f64], sigma: f64) -> f64 {
 }
 
 /// Triweight kernel: k(x, y) = max(0, 1 - ||x-y||² / σ²)³
+///
+/// A smoothing kernel, not positive definite: its Fourier transform takes
+/// negative values, as for [`epanechnikov`]. MMD computed with it is neither
+/// a metric nor a squared RKHS norm.
 ///
 /// # Examples
 ///
@@ -569,6 +586,12 @@ pub fn rbf_kernel_matrix_ndarray(points: ArrayView2<'_, f64>, sigma: f64) -> Arr
 /// # Returns
 ///
 /// MMD² estimate (biased)
+///
+/// For a positive-definite kernel this V-statistic is a squared RKHS norm and
+/// cannot be negative. With a kernel that is not positive definite (for
+/// example [`epanechnikov`], [`quartic`] or [`triweight`]) it can be; a
+/// negative value is clamped to `0.0`, so a result of zero does not mean the
+/// samples match.
 ///
 /// Returns `0.0` without evaluating the kernel if either sample set is empty.
 /// Singleton sample sets are supported.
