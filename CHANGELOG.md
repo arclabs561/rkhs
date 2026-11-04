@@ -16,6 +16,14 @@ These source changes are listed without assigning them to a published release.
   falls between tied samples: the interpolation now returns the tied value
   exactly instead of rounding below it and emptying the `s <= q` prefix.
 
+### Documentation
+
+- `epanechnikov`, `quartic` and `triweight` are documented as smoothing
+  kernels that are not positive definite (their Fourier transforms take
+  negative values), so MMD computed with them is neither a metric nor a
+  squared RKHS norm. `mmd_biased` documents that it clamps a negative
+  V-statistic to 0.
+
 ## [0.3.1] - 2026-10-09
 
 ### Added
